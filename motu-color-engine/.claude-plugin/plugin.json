@@ -1,0 +1,11 @@
+{
+  "name": "motu-color-engine",
+  "description": "AI portrait color grading and skin segmentation via the Motu Color Engine API. Use to grade portrait skin tone, apply a film/commercial look, or export a skin mask.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Motu",
+    "email": "hello@motu.art"
+  },
+  "homepage": "https://mce.motu.art/developers",
+  "license": "MIT"
+}

@@ -1,0 +1,29 @@
+{
+  "name": "motu-skills",
+  "owner": {
+    "name": "Motu",
+    "email": "hello@motu.art"
+  },
+  "description": "Motu Color Engine agent skills — AI portrait color grading and skin segmentation.",
+  "plugins": [
+    {
+      "name": "motu-color-engine",
+      "source": "./motu-color-engine",
+      "description": "AI portrait color grading and skin segmentation via the Motu Color Engine API. Grade portraits with a film/commercial look, or export a skin mask.",
+      "author": {
+        "name": "Motu"
+      },
+      "homepage": "https://mce.motu.art/developers",
+      "repository": "https://github.com/motu-art/motu-skills",
+      "license": "MIT",
+      "keywords": [
+        "portrait",
+        "color-grading",
+        "skin-tone",
+        "skin-mask",
+        "segmentation",
+        "image"
+      ]
+    }
+  ]
+}
