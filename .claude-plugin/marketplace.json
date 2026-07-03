@@ -2,7 +2,7 @@
   "name": "motu-skills",
   "owner": {
     "name": "Motu",
-    "email": "hello@motu.art"
+    "email": "hi@motu.art"
   },
   "description": "Motu Color Engine agent skills — AI portrait color grading and skin segmentation.",
   "plugins": [

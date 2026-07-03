@@ -62,7 +62,7 @@ scripts/mask.sh  photo.jpg skin.png skin            # skin | valid_skin | face |
 
 ## API key
 
-Keys are invite-only during early access. Email **hello@motu.art** with your use case.
+Keys are invite-only during early access. Email **hi@motu.art** with your use case.
 
 ## Links
 
