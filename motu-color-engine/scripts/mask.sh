@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Export a segmentation mask via POST /v1/mask (skips grading). Saves a grayscale PNG.
 # Usage: mask.sh <input> <output.png> [mask-kind]
-#   mask-kind: skin (default) | valid_skin | face | person | hair | cloth | background
+#   mask-kind: skin (default) | valid_skin | face | person
 set -euo pipefail
 
 BASE="${MCE_API_BASE:-https://mce.motu.art}"

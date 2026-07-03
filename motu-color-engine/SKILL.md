@@ -47,8 +47,7 @@ scripts/grade.sh <input-image> <output-image> [style-id] [strength]
 ```bash
 scripts/mask.sh <input-image> <output.png> [mask-kind]
 ```
-- `mask-kind` — one of `skin` (default), `valid_skin`, `face`, `person`, `hair`,
-  `cloth`, `background`.
+- `mask-kind` — one of `skin` (default), `valid_skin`, `face`, `person`.
 - Output is an 8-bit grayscale PNG aligned to the input.
 
 ## Discover available styles

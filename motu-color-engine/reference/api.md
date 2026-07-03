@@ -36,8 +36,7 @@ is the skin ΔE to the target skin (lower = closer).
 ## POST /v1/mask  (multipart/form-data)
 Segmentation only (decode + parse; **skips grading/render/score** — faster). Fields:
 - `file` (required).
-- `mask_kind` — `skin` (default) | `valid_skin` | `face` | `person` | `hair` |
-  `cloth` | `background`.
+- `mask_kind` — `skin` (default) | `valid_skin` | `face` | `person`.
 - `max_long_edge` — optional.
 
 Returns the mask as a raw **grayscale PNG** (`Content-Type: image/png`), with header
