@@ -17,6 +17,10 @@ Grade an image. Fields:
 - `file` (required) — image upload (JPG/PNG/WebP, ≤ ~15 MB).
 - `style` — style id (default `motu_korean_id`).
 - `strength` — look intensity, default `1.0` (0–~1.5).
+- `smooth_strength` — optional M15 pro skin smoothing, `0`–`1`. Omitted/`0` leaves skin
+  texture untouched (default). Softens pores/blemishes only; never reshapes the face.
+- `smooth_texture_retain` — optional, `0`–`1` (default `0.35`), how much natural
+  texture to keep on top of the smoothing. Only used when `smooth_strength` > 0.
 - `output_format` — `png` (default) | `jpeg` | `webp`.
 - `quality` — 1–100 for lossy formats (default 90).
 - `max_long_edge` — cap working long edge (default 1024; server ceiling applies).
@@ -41,6 +45,19 @@ Segmentation only (decode + parse; **skips grading/render/score** — faster). F
 
 Returns the mask as a raw **grayscale PNG** (`Content-Type: image/png`), with header
 `X-MCE-Mask-Kind`. Save the response body directly.
+
+## POST /v1/smooth  (multipart/form-data)
+Standalone M15 pro skin smoothing — runs decode + parse + smoothing + render only,
+**skipping the entire color-grading stack**. Softens pores/blemishes on the detected
+skin region; never reshapes the face or changes color. Fields:
+- `file` (required).
+- `strength` — smoothing amount, default `0.6`.
+- `texture_retain` — how much natural texture to keep, default `0.35`.
+- `radius_frac` — optional blur radius override (fraction of face size).
+- `output_format` — `png` (default) | `jpeg` | `webp`.
+- `quality` — 1–100 for lossy formats (default 90).
+
+Returns the smoothed image as a raw payload (default `image/png`), like `/v1/mask`.
 
 ## Errors
 - `400` bad params / empty upload · `401` missing/invalid key ·

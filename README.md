@@ -1,10 +1,13 @@
 # Motu Color Engine — Agent Skill
 
-AI **portrait color grading** (skin-tone anchored) and **skin segmentation** for your
-coding agent, via the hosted Motu Color Engine HTTP API. It only changes color — no
-smoothing, reshaping, or face swap.
+AI **portrait color grading** (skin-tone anchored), optional **pro skin smoothing**,
+and **skin segmentation** for your coding agent, via the hosted Motu Color Engine
+HTTP API. It never reshapes the face, slims, or swaps identity — skin smoothing only
+softens pores/blemishes on the detected skin region and is off by default.
 
-- Grade a portrait to a film / commercial look (`/v1/process`)
+- Grade a portrait to a film / commercial look (`/v1/process`), optionally with
+  pro skin smoothing layered on
+- Smooth skin only, no color change (`/v1/smooth`)
 - Export a skin mask / matte (`/v1/mask`)
 - List available styles (`/v1/styles`)
 
@@ -57,6 +60,8 @@ look" or "export the skin mask from photo.jpg". Or call the scripts directly:
 ```bash
 scripts/styles.sh                                   # list styles
 scripts/grade.sh photo.jpg graded.png kodak_gold 1.0
+scripts/grade.sh photo.jpg graded.png kodak_gold 1.0 0.6 0.35  # + pro skin smoothing
+scripts/smooth.sh photo.jpg smoothed.png 0.6 0.35   # smoothing only, no color change
 scripts/mask.sh  photo.jpg skin.png skin            # skin | valid_skin | face | person
 ```
 
