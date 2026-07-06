@@ -1,4 +1,4 @@
-# Motu Color Engine — API reference
+# MotuArt Color Engine — API reference
 
 Base URL: `$MCE_API_BASE` (default `https://mce.motu.art`).
 Auth: if enabled, send `X-API-Key: $MCE_API_KEY` (or `Authorization: Bearer $MCE_API_KEY`)

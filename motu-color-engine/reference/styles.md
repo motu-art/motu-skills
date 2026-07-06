@@ -1,4 +1,4 @@
-# Motu Color Engine — styles overview
+# MotuArt Color Engine — styles overview
 
 The live catalog is authoritative — run `scripts/styles.sh` to list current ids.
 This is a quick orientation to the two style tiers and the shipping looks.

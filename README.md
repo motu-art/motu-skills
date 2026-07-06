@@ -1,7 +1,7 @@
-# Motu Color Engine — Agent Skill
+# MotuArt Color Engine — Agent Skill
 
 AI **portrait color grading** (skin-tone anchored), optional **pro skin smoothing**,
-and **skin segmentation** for your coding agent, via the hosted Motu Color Engine
+and **skin segmentation** for your coding agent, via the hosted MotuArt Color Engine
 HTTP API. It never reshapes the face, slims, or swaps identity — skin smoothing only
 softens pores/blemishes on the detected skin region and is off by default.
 

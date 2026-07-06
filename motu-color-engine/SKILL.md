@@ -2,7 +2,7 @@
 name: motu-color-engine
 description: >
   AI portrait skin-color grading, optional pro skin smoothing, and skin segmentation
-  via the Motu Color Engine HTTP API. Use when the user wants to color-grade / correct
+  via the MotuArt Color Engine HTTP API. Use when the user wants to color-grade / correct
   skin tone on portrait photos, apply a film or commercial look, smooth skin
   (pores/blemishes), batch-grade a folder of portraits, or export a skin mask (matte /
   segmentation) from a portrait. Trigger keywords: portrait color grading, skin tone,
