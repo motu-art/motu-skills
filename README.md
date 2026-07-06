@@ -74,6 +74,7 @@ Keys are invite-only during early access. Email **hi@motu.art** with your use ca
 - Developer docs: https://mce.motu.art/developers
 - API reference: [reference/api.md](motu-color-engine/reference/api.md)
 - Styles overview: [reference/styles.md](motu-color-engine/reference/styles.md)
+- Community: [MotuArt Community on Discord](https://discord.gg/v8xMR2hK9)
 
 ## License
 
