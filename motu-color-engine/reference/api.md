@@ -26,6 +26,14 @@ Grade an image. Fields:
 - `max_long_edge` — cap working long edge (default 1024; server ceiling applies).
 - `mask` — `true` to also return a mask inline (base64).
 - `mask_kind` — mask type when `mask=true` (see below).
+- `crop_spec` — optional M16 purpose crop spec id (see `GET /v1/crop/specs`). When set,
+  the graded output is additionally cropped to that spec (grade + crop in one call).
+  Omitted — full graded frame, uncropped.
+- `pad_color` — optional `#RRGGBB` padding when the source lacks the spec's required
+  margin; only used with `crop_spec`. Omitted — edge-replicate padding (the default).
+- `bg_color` — optional background replacement (换底), only used with `crop_spec`: a
+  palette name the spec allows (e.g. `white`/`blue`/`red`), `default` for the spec's
+  standard color, or an explicit `#RRGGBB`. Omitted — original background kept.
 
 Response JSON:
 ```
@@ -58,6 +66,40 @@ skin region; never reshapes the face or changes color. Fields:
 - `quality` — 1–100 for lossy formats (default 90).
 
 Returns the smoothed image as a raw payload (default `image/png`), like `/v1/mask`.
+
+## GET /v1/crop/specs
+List the available purpose-crop specs (证件照/形象照/头像 standards). Returns
+`{ specs: [{id, name, name_zh, category, width_px, height_px, width_mm, height_mm,
+dpi, head_ratio, bg_colors, default_bg, description_zh}] }`.
+- `category` — `id_photo` | `portrait` | `avatar`.
+- `width_mm`/`height_mm`/`dpi` — physical print size; `null` for portrait/avatar specs
+  (pixel-only, no print standard).
+- `bg_colors` — `{name: "#RRGGBB"}` palette the spec allows for background
+  replacement; `{}` when the spec does not standardize a background (most
+  portrait/avatar specs). `default_bg` is the palette name applied when a caller
+  requests `bg_color="default"`.
+- See `reference/crop-specs.md` for a curated overview of the shipped specs.
+
+## POST /v1/crop  (multipart/form-data)
+Standalone M16 purpose-crop. Runs decode + face/head geometry + crop **only** — no
+human parsing, no color grading (use `/v1/process` with `crop_spec` to grade and crop
+together). Fields:
+- `file` (required) — image upload (JPG/PNG/WebP, ≤ ~15 MB).
+- `spec` — crop spec id (default `one_inch`); see `GET /v1/crop/specs`.
+- `pad_color` — optional `#RRGGBB` padding when the source lacks the spec's required
+  margin. Omitted — edge-replicate padding.
+- `bg_color` — optional background replacement (换底): a palette name the spec
+  allows, `default` for the spec's standard color, or an explicit `#RRGGBB`. Omitted —
+  original background kept.
+- `max_long_edge` — optional working-resolution cap; `0`/omitted means **full source
+  resolution** (crop quality is bounded by source resolution, not a latency budget —
+  unlike `/v1/process`, which defaults to 1024).
+- `output_format` — `png` (default) | `jpeg` | `webp`.
+- `quality` — 1–100 for lossy formats (default 90).
+
+Returns the cropped image as a raw payload (default `image/png`, with the spec's DPI
+embedded), like `/v1/mask`/`/v1/smooth`. The achieved geometry and any warnings are in
+the `X-MCE-Crop-Info` response header (JSON), alongside `X-MCE-Trace-Id`.
 
 ## Errors
 - `400` bad params / empty upload · `401` missing/invalid key ·

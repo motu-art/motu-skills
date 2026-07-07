@@ -1,15 +1,19 @@
 # MotuArt Color Engine — Agent Skill
 
 AI **portrait color grading** (skin-tone anchored), optional **pro skin smoothing**,
-and **skin segmentation** for your coding agent, via the hosted MotuArt Color Engine
-HTTP API. It never reshapes the face, slims, or swaps identity — skin smoothing only
-softens pores/blemishes on the detected skin region and is off by default.
+**skin segmentation**, and **purpose-driven photo cropping** for your coding agent, via
+the hosted MotuArt Color Engine HTTP API. It never reshapes the face, slims, or swaps
+identity — skin smoothing only softens pores/blemishes on the detected skin region and
+is off by default; cropping only repositions/pads the frame to a spec's head ratio and
+margins.
 
 - Grade a portrait to a film / commercial look (`/v1/process`), optionally with
   pro skin smoothing layered on
 - Smooth skin only, no color change (`/v1/smooth`)
 - Export a skin mask / matte (`/v1/mask`)
-- List available styles (`/v1/styles`)
+- Crop to a standard ID/passport/visa/headshot/avatar size, with optional
+  background color swap (`/v1/crop`, or combined with grading via `/v1/process`)
+- List available styles (`/v1/styles`) and crop specs (`/v1/crop/specs`)
 
 This is a standard [Agent Skill](https://agentskills.io) (`SKILL.md`), compatible with
 Claude Code, Codex CLI, ZCode, OpenClaw, Augment, Windsurf and more.
@@ -63,6 +67,9 @@ scripts/grade.sh photo.jpg graded.png kodak_gold 1.0
 scripts/grade.sh photo.jpg graded.png kodak_gold 1.0 0.6 0.35  # + pro skin smoothing
 scripts/smooth.sh photo.jpg smoothed.png 0.6 0.35   # smoothing only, no color change
 scripts/mask.sh  photo.jpg skin.png skin            # skin | valid_skin | face | person
+scripts/crop-specs.sh                               # list crop specs (ID/portrait/avatar sizes)
+scripts/crop.sh photo.jpg id.png one_inch white      # crop-only + background swap, no grading
+scripts/grade.sh photo.jpg id.png motu_korean_id 1.0 0 0 one_inch white  # grade + crop combined
 ```
 
 ## API key
@@ -74,6 +81,7 @@ Keys are invite-only during early access. Email **hi@motu.art** with your use ca
 - Developer docs: https://mce.motu.art/developers
 - API reference: [reference/api.md](motu-color-engine/reference/api.md)
 - Styles overview: [reference/styles.md](motu-color-engine/reference/styles.md)
+- Crop specs overview: [reference/crop-specs.md](motu-color-engine/reference/crop-specs.md)
 - Community: [MotuArt Community on Discord](https://discord.gg/v8xMR2hK9)
 
 ## License
