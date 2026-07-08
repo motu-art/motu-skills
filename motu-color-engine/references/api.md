@@ -78,7 +78,7 @@ dpi, head_ratio, bg_colors, default_bg, description_zh}] }`.
   replacement; `{}` when the spec does not standardize a background (most
   portrait/avatar specs). `default_bg` is the palette name applied when a caller
   requests `bg_color="default"`.
-- See `reference/crop-specs.md` for a curated overview of the shipped specs.
+- See `references/crop-specs.md` for a curated overview of the shipped specs.
 
 ## POST /v1/crop  (multipart/form-data)
 Standalone M16 purpose-crop. Runs decode + face/head geometry + crop **only** — no

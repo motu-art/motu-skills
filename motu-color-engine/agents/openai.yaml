@@ -1,0 +1,7 @@
+interface:
+  display_name: "MotuArt Color Engine"
+  short_description: "Portrait grading, masks, smoothing, and ID crops"
+  default_prompt: "Use $motu-color-engine to grade this portrait, preserve identity, and export the requested crop or mask."
+
+policy:
+  allow_implicit_invocation: true

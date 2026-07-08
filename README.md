@@ -79,9 +79,9 @@ Keys are invite-only during early access. Email **hi@motu.art** with your use ca
 ## Links
 
 - Developer docs: https://mce.motu.art/developers
-- API reference: [reference/api.md](motu-color-engine/reference/api.md)
-- Styles overview: [reference/styles.md](motu-color-engine/reference/styles.md)
-- Crop specs overview: [reference/crop-specs.md](motu-color-engine/reference/crop-specs.md)
+- API reference: [references/api.md](motu-color-engine/references/api.md)
+- Styles overview: [references/styles.md](motu-color-engine/references/styles.md)
+- Crop specs overview: [references/crop-specs.md](motu-color-engine/references/crop-specs.md)
 - Community: [MotuArt Community on Discord](https://discord.gg/v8xMR2hK9)
 
 ## License
