@@ -101,6 +101,55 @@ Returns the cropped image as a raw payload (default `image/png`, with the spec's
 embedded), like `/v1/mask`/`/v1/smooth`. The achieved geometry and any warnings are in
 the `X-MCE-Crop-Info` response header (JSON), alongside `X-MCE-Trace-Id`.
 
+## POST /v1/id-pack  (multipart/form-data)
+Generate a complete ID-photo delivery package. The service creates one graded/smoothed
+master, detects face/head geometry once, then crops multiple specs from that master.
+Fields:
+- `file` (required) — image upload.
+- `specs` (required) — comma-separated crop spec ids, e.g. `passport_cn,one_inch`.
+- `style` — style id (default `motu_korean_id`).
+- `smooth_strength`, `smooth_texture_retain` — optional skin smoothing.
+- `strength`, `output_space`, `max_long_edge` — same meaning as `/v1/process`.
+- `bg_color` — `default` (recommended for ID photos), palette name, or `#RRGGBB`.
+- `pad_color` — optional padding colour.
+- `output_format` — `png` (default) | `jpeg` | `webp` for single-spec files.
+- `quality` — output quality for lossy formats.
+- `upload` — `true` to include upload-optimized files using spec `upload` rules.
+- `print_sheet` — optional paper id such as `6x4`/`a4`; groups same-size photos.
+
+Response JSON includes `trace_id`, `style_id`, `master_base64`, `items[]` with
+`image_base64`, `crop_info`, `compliance`, optional `upload.image_base64`, optional
+`print_sheets[].image_base64`, and the master quality report.
+
+## POST /v1/id-check  (multipart/form-data)
+Check an ID photo against a crop spec. Fields:
+- `file` (required) — source portrait, or already-cropped ID photo when `report_json` is supplied.
+- `spec` (required) — crop spec id.
+- `report_json` — optional crop report containing `metrics.crop`; use this when checking an already-cropped output.
+- `bg_color` — optional background for the temporary crop-check path (default `default`).
+
+Response JSON: `{ ok, status, checks, warnings, errors }`. This is practical QA, not
+a government acceptance guarantee.
+
+## POST /v1/optimize  (multipart/form-data)
+Export an upload-ready file. Fields:
+- `file` (required).
+- `output_format` — `jpg`/`jpeg` (default), `png`, or `webp`.
+- `max_kb` — optional maximum file size in KB.
+- `quality`, `min_quality` — lossy encoder quality range.
+- `resize` — optional `WIDTHxHEIGHT`.
+- `dpi` — optional DPI metadata.
+
+Returns the optimized image as a raw payload. Metadata is in `X-MCE-Export-Info`.
+
+## POST /v1/print-sheet  (multipart/form-data)
+Layout one or more same-size ID photos on paper. Fields:
+- `files` — one or more image uploads.
+- `paper` — `6x4` (default), `4x6`, `5x7`, `7x5`, `a4`, or `WIDTHxHEIGHTin`.
+- `dpi`, `margin_mm`, `gap_mm`, `cut_lines`, `output_format`.
+
+Returns the print sheet as a raw image payload. Metadata is in `X-MCE-Print-Sheet-Info`.
+
 ## Errors
 - `400` bad params / empty upload · `401` missing/invalid key ·
   `413` too large · `415` unsupported content-type · `422` processing/segmentation failed.

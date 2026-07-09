@@ -9,7 +9,9 @@ three categories and the shipping specs.
 - **id_photo** — official ID/passport/visa/license photo standards. Fixed pixel size
   + physical `width_mm`/`height_mm` + `dpi` (embedded on save, so exports print at the
   right physical size). Most declare a `bg_colors` palette for background replacement
-  (换底) since these documents require a specific solid background.
+  (换底) since these documents require a specific solid background. ID-photo specs may
+  also include `compliance`, `upload`, and `print` metadata used by `id-pack`,
+  `id-check`, upload optimization, and print-sheet layout.
 - **portrait** — professional/editorial portrait framings (headshot to full body).
   Pixel-only, no print standard, no background palette (original background kept).
 - **avatar** — square social-avatar framing. Pixel-only, no background palette.

@@ -1,9 +1,9 @@
 {
   "name": "motu-color-engine",
-  "description": "AI portrait color grading, optional pro skin smoothing, and skin segmentation via the MotuArt Color Engine API. Use to grade portrait skin tone, apply a film/commercial look, smooth skin, or export a skin mask.",
+  "description": "AI portrait color grading, pro skin smoothing, segmentation masks, ID/passport crop generation, compliance checks, upload optimization, and print-sheet packaging via the MotuArt Color Engine API.",
   "version": "1.1.0",
   "author": {
-    "name": "Motu",
+    "name": "MotuArt",
     "email": "hi@motu.art"
   },
   "homepage": "https://mce.motu.art/developers",

@@ -23,6 +23,10 @@ The engine preserves identity. Do not describe it as slimming, reshaping, face s
 - Use `scripts/smooth.sh` when the user wants smoothing only with no color or white-balance change.
 - Use `scripts/mask.sh` when the user wants a skin, valid-skin, face, or person mask/matte.
 - Use `scripts/crop.sh` when the user wants crop-only ID/passport/visa/headshot/avatar output, optionally with a solid background color.
+- Use `scripts/id-pack.sh` when the user wants a complete ID/passport photo delivery package: one graded/smoothed master, multiple specs, upload-ready files, compliance report, and optional print sheets.
+- Use `scripts/id-check.sh` when the user wants to validate an ID photo against a spec or understand compliance warnings.
+- Use `scripts/optimize.sh` when the user needs a website/upload-ready file with format, pixel size, DPI, or maximum KB constraints.
+- Use `scripts/print-sheet.sh` when the user wants cropped ID photos laid out on photo paper for printing.
 - Use `scripts/styles.sh` to discover live style ids. Read `references/styles.md` only when the user needs style-selection guidance or offline context.
 - Use `scripts/crop-specs.sh` to discover live crop specs. Read `references/crop-specs.md` only when choosing specs or background palettes without live discovery.
 - Read `references/api.md` for endpoint parameters, response fields, headers, limits, and error codes.
@@ -76,6 +80,48 @@ scripts/crop.sh <input-image> <output-image> [spec-id] [bg-color] [pad-color]
 - Use `pad-color` only when a source image lacks required margins and the user wants a specific fill.
 - Surface crop warnings from script output, especially warnings about margins, resolution, or background limitations.
 - Use `grade.sh` with crop arguments when the user wants grading and crop in one output.
+
+## Make ID Photo Packages
+
+```bash
+scripts/id-pack.sh <input-image> <output-dir> [specs] [style-id] [smooth-strength] [bg-color] [upload] [print-sheet]
+```
+
+- Use this for passport/visa/ID-photo deliverables rather than calling `grade.sh` once per spec. The API generates one graded/smoothed master first, then crops multiple specs from that master so colour and retouching stay consistent.
+- `specs` is comma-separated, e.g. `passport_cn,one_inch,us_visa`; default is `passport_cn`.
+- Default style is `motu_business_neutral`; pass `smooth-strength` from `0` to `1` only when the user asks for smoothing.
+- `bg-color` defaults to `default`, which applies each spec's standard background palette. Use `white`, `blue`, `red`, or `#RRGGBB` when the user asks.
+- `upload` defaults to `true`, writing upload-optimized JPG files using the spec's `upload` rules from `crop_specs.json`.
+- `print-sheet` is optional, e.g. `6x4` or `a4`; when specs have different sizes, separate sheets may be generated.
+- Output folder contains `master.png`, `single/`, `upload/`, `print/`, and `report.json`. Surface compliance status and warnings from the report.
+
+## Check ID Photo Compliance
+
+```bash
+scripts/id-check.sh <input-image> [spec-id] [report-json]
+```
+
+- Without `report-json`, the input is treated as a source portrait: the API crop-checks it against the spec and reports practical compliance.
+- With `report-json`, the input is treated as the already-cropped ID photo and the supplied crop metrics are checked.
+- Report failures and warnings plainly; this is a practical QA check, not a government guarantee.
+
+## Optimize Upload Files
+
+```bash
+scripts/optimize.sh <input-image> <output-image> [format] [max-kb] [quality] [resize] [dpi]
+```
+
+- Use for official website upload limits such as JPG under a maximum KB, exact pixel dimensions, or DPI metadata.
+- `format` is `jpg`, `png`, or `webp`; `resize` is `WIDTHxHEIGHT`; lossy formats search quality down to the server default floor when `max-kb` is set.
+
+## Make Print Sheets
+
+```bash
+scripts/print-sheet.sh <output-image> <paper> <input1> [input2 ...]
+```
+
+- Use after generating cropped ID photos when the user wants a printable sheet.
+- `paper` supports common values such as `6x4`, `4x6`, `5x7`, and `a4`. Inputs on a single sheet must have the same pixel size; use `id-pack.sh` for automatic grouping by size.
 
 ## Constraints To Surface
 
