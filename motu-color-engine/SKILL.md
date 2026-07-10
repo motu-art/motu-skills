@@ -88,9 +88,9 @@ scripts/id-pack.sh <input-image> <output-dir> [specs] [style-id] [smooth-strengt
 ```
 
 - Use this for passport/visa/ID-photo deliverables rather than calling `grade.sh` once per spec. The API generates one graded/smoothed master first, then crops multiple specs from that master so colour and retouching stay consistent.
-- `specs` is comma-separated, e.g. `passport_cn,one_inch,us_visa`; default is `passport_cn`.
+- `specs` is comma-separated, e.g. `passport_cn,one_inch,us_visa`; default is `passport_cn`. School/enrollment specs include `shanghai_compulsory_education_cn`, `college_graduation_image_cn`, and `national_k12_student_status_cn`.
 - Default style is `motu_business_neutral`; pass `smooth-strength` from `0` to `1` only when the user asks for smoothing.
-- `bg-color` defaults to `default`, which applies each spec's standard background palette. Use `white`, `blue`, `red`, or `#RRGGBB` when the user asks.
+- `bg-color` defaults to `default`, which applies each spec's standard background palette. Use `white`, `blue`, `light_blue`, `red`, or `#RRGGBB` when the user asks and the spec allows it.
 - `upload` defaults to `true`, writing upload-optimized JPG files using the spec's `upload` rules from `crop_specs.json`.
 - `print-sheet` is optional, e.g. `6x4` or `a4`; when specs have different sizes, separate sheets may be generated.
 - Output folder contains `master.png`, `single/`, `upload/`, `print/`, and `report.json`. Surface compliance status and warnings from the report.

@@ -30,6 +30,9 @@ you never draw a crop box by hand.
 | `small_one_inch` | Driver's license / some certificates | 260×378px | 22×32mm@300dpi |
 | `big_two_inch` | Diploma (blue background common) | 413×626px | 35×53mm@300dpi |
 | `id_card_cn` | CN ID card / social security card (GA 461) | 358×441px | 26×32mm@350dpi |
+| `shanghai_compulsory_education_cn` | 上海义务教育入学免冠证件照 | 272×354px | 20×26mm@350dpi |
+| `college_graduation_image_cn` | 大学生毕业图像信息采集免冠证件照 | 480×640px | 41×54mm@300dpi |
+| `national_k12_student_status_cn` | 全国中小学生学籍电子版照片 | 358×441px | 26×32mm@350dpi |
 | `passport_cn` | CN passport / HK-Macau-Taiwan permit / CN visa | 390×567px | 33×48mm@300dpi |
 | `us_visa` | US visa 2×2 | 600×600px | 51×51mm@300dpi |
 | `schengen_visa` | Schengen/UK visa | 413×531px | 35×45mm@300dpi |
@@ -57,7 +60,7 @@ you never draw a crop box by hand.
 ## Background replacement (换底)
 
 Only `id_photo` specs declare a `bg_colors` palette (e.g. `{"white": "#FFFFFF",
-"blue": "#438EDB", "red": "#FF0000"}` for the CN sizes). Pass a palette name, `default`
+"blue": "#438EDB", "light_blue": "#D6EAF8", "red": "#FF0000"}` for the CN sizes). Pass a palette name, `default`
 (the spec's standard choice), or an explicit `#RRGGBB` as `bg_color` — an
 unrecognized name is rejected (the palette *is* the compliance rule for these
 documents). Background swap runs a portrait-matting pass on the crop window at source
