@@ -1,6 +1,6 @@
 ---
 name: motu-color-engine
-description: AI portrait color grading, skin-tone correction, optional pro skin smoothing, skin mask export, and ID/passport/headshot/avatar crop generation through the MotuArt Color Engine HTTP API. Use when Codex needs to process portrait photos for film or commercial looks, correct or normalize skin tone, soften pores or blemishes without reshaping identity, export skin/person/face mattes, batch process portrait folders, crop to one-inch/two-inch/passport/visa/headshot specs, or replace an ID-photo background color. Trigger examples include portrait color grading, skin tone, skin smoothing, retouch, skin mask, matte, film look, headshot, ID photo, passport photo, visa photo, crop to size, background color swap, 调色, 肤色, 磨皮, 皮肤蒙版, 人像调色, 证件照, 裁剪, 换底, 一寸, 二寸.
+description: AI portrait color grading, skin-tone correction, identity-preserving skin smoothing, skin/person/face mask export, approved clothing replacement, and ID/passport/headshot/avatar production through the MotuArt Color Engine HTTP API. Use for grading or retouching portraits, normalizing skin tone, exporting mattes, batch-processing portraits, replacing clothing with a server-approved outfit, cropping to ID/passport/visa/headshot specs, replacing an ID-photo background, validating compliance, optimizing upload files, or creating print sheets. Trigger examples include portrait grading, skin tone, retouch, skin mask, outfit replacement, change clothes, ID photo, passport photo, visa photo, headshot, crop to size, background swap, print sheet, 调色, 肤色, 磨皮, 蒙版, 人像调色, 换装, 换衣, 服装替换, 证件照, 裁剪, 换底, 合规检查, 排版, 一寸, 二寸.
 ---
 
 # Motu Color Engine
@@ -24,6 +24,7 @@ The engine preserves identity. Do not describe it as slimming, reshaping, face s
 - Use `scripts/mask.sh` when the user wants a skin, valid-skin, face, or person mask/matte.
 - Use `scripts/crop.sh` when the user wants crop-only ID/passport/visa/headshot/avatar output, optionally with a solid background color.
 - Use `scripts/outfit.sh` when the user wants clothing replacement only. The outfit id must come from the server-maintained approved catalog; never accept or invent an arbitrary garment asset.
+- Use `scripts/outfits.sh` before clothing replacement to discover currently enabled outfit ids. Do not infer an id from a garment name.
 - Use `scripts/id-pack.sh` when the user wants a complete ID/passport photo delivery package: one graded/smoothed master, multiple specs, upload-ready files, compliance report, and optional print sheets.
 - Use `scripts/id-check.sh` when the user wants to validate an ID photo against a spec or understand compliance warnings.
 - Use `scripts/optimize.sh` when the user needs a website/upload-ready file with format, pixel size, DPI, or maximum KB constraints.
@@ -99,11 +100,20 @@ scripts/id-pack.sh <input-image> <output-dir> [specs] [style-id] [smooth-strengt
 
 ## Replace Clothing Only
 
+Discover the approved catalog first:
+
+```bash
+scripts/outfits.sh
+```
+
+Select only an id returned by that command, then replace clothing:
+
 ```bash
 scripts/outfit.sh <input-image> <output.png> <approved-outfit-id> [long-edge]
 ```
 
 - Only use ids returned by `GET /v1/outfits`; the API rejects arbitrary outfit ids and does not accept user-supplied clothing images.
+- If the requested clothing is absent, explain that only maintained styles are allowed; do not substitute an arbitrary URL or upload.
 - The service protects the detected facial oval with the face mask and calls the configured Motu asynchronous workflow.
 - Default output long edge is 1536px; the service bounds requests to 512–2048px.
 - Clothing generation must preserve the face and identity. Report upstream failures or timeouts instead of silently returning the original image.
