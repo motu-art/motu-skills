@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Generate an ID-photo delivery package via POST /v1/id-pack: one graded/smoothed
 # master, then multiple crop specs, optional upload-optimized files and print sheets.
-# Usage: id-pack.sh <input> <output-dir> [specs] [style-id] [smooth-strength] [bg-color] [upload] [print-sheet]
+# Usage: id-pack.sh <input> <output-dir> [specs] [style-id] [smooth-strength] [bg-color] [upload] [print-sheet] [outfit-id] [outfit-long-edge]
 #   specs            comma-separated crop spec ids (default: passport_cn)
 #   style-id         style id (default: motu_business_neutral)
 #   smooth-strength  optional M15 smoothing strength, 0-1 (default: 0/off)
@@ -19,6 +19,8 @@ SMOOTH_STRENGTH="${5:-}"
 BG_COLOR="${6:-default}"
 UPLOAD="${7:-true}"
 PRINT_SHEET="${8:-}"
+OUTFIT_ID="${9:-}"
+OUTFIT_LONG_EDGE="${10:-1536}"
 
 [ -f "$IN" ] || { echo "input not found: $IN" >&2; exit 1; }
 mkdir -p "$OUT_DIR"
@@ -31,6 +33,7 @@ args=(-sS -A "motu-mce-skill/1.0" -X POST "$BASE/v1/id-pack"
   -F "upload=$UPLOAD")
 [ -n "$SMOOTH_STRENGTH" ] && args+=(-F "smooth_strength=$SMOOTH_STRENGTH")
 [ -n "$PRINT_SHEET" ] && args+=(-F "print_sheet=$PRINT_SHEET")
+[ -n "$OUTFIT_ID" ] && args+=(-F "outfit_id=$OUTFIT_ID" -F "outfit_long_edge=$OUTFIT_LONG_EDGE")
 [ -n "${MCE_API_KEY:-}" ] && args+=(-H "X-API-Key: $MCE_API_KEY")
 
 RESP_FILE="$(mktemp)"

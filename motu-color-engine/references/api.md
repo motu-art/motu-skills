@@ -121,6 +121,24 @@ Response JSON includes `trace_id`, `style_id`, `master_base64`, `items[]` with
 `image_base64`, `crop_info`, `compliance`, optional `upload.image_base64`, optional
 `print_sheets[].image_base64`, and the master quality report.
 
+Optional outfit fields:
+- `outfit_id` — approved id returned by `GET /v1/outfits`; omitted keeps the original clothing.
+- `outfit_long_edge` — upstream generation long edge, bounded to 512–2048; default 1536.
+
+## GET /v1/outfits
+Returns the server-maintained outfit catalog. `available` mirrors the private catalog's
+`enabled` switch. Internal garment asset URLs are never exposed.
+
+## POST /v1/outfit  (multipart/form-data)
+Controlled standalone clothing replacement. Fields:
+- `file` (required) — source JPG, PNG, or WebP.
+- `outfit_id` (required) — approved catalog id. Arbitrary garments are rejected.
+- `long_edge` — requested generation long edge, bounded to 512–2048; default 1536.
+
+Response JSON contains `task_id`, `outfit_id`, `image_base64`, `content_type`,
+`long_edge`, and `processing_time_ms`. MCE submits the source, approved garment,
+face mask, and long edge to the configured asynchronous Motu workflow and polls it.
+
 ## POST /v1/id-check  (multipart/form-data)
 Check an ID photo against a crop spec. Fields:
 - `file` (required) — source portrait, or already-cropped ID photo when `report_json` is supplied.
