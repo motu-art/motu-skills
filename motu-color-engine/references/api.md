@@ -126,18 +126,21 @@ Optional outfit fields:
 - `outfit_long_edge` — upstream generation long edge, bounded to 512–2048; default 1536.
 
 ## GET /v1/outfits
-Returns the server-maintained outfit catalog. `available` mirrors the private catalog's
-`enabled` switch. Internal garment asset URLs are never exposed.
+Returns the approved outfit catalog. Each item includes `id`, localized names and
+descriptions, `category` (`male`/`female`/`kids`/`unisex`), `order`, `available`, and
+optional `preview_url`. `available` mirrors the catalog's `enabled` switch. The
+controlled `generation_prompt` used by the workflow is never exposed.
 
 ## POST /v1/outfit  (multipart/form-data)
 Controlled standalone clothing replacement. Fields:
 - `file` (required) — source JPG, PNG, or WebP.
-- `outfit_id` (required) — approved catalog id. Arbitrary garments are rejected.
+- `outfit_id` (required) — approved catalog id. Custom prompts and arbitrary ids are rejected.
 - `long_edge` — requested generation long edge, bounded to 512–2048; default 1536.
 
 Response JSON contains `task_id`, `outfit_id`, `image_base64`, `content_type`,
-`long_edge`, and `processing_time_ms`. MCE submits the source, approved garment,
-face mask, and long edge to the configured asynchronous Motu workflow and polls it.
+`long_edge`, and `processing_time_ms`. MCE resolves the id to its controlled
+`generation_prompt`, then submits the source, prompt, face mask, and long edge to the
+configured asynchronous Motu workflow and polls it.
 
 ## POST /v1/id-check  (multipart/form-data)
 Check an ID photo against a crop spec. Fields:

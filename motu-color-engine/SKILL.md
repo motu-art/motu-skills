@@ -23,7 +23,7 @@ The engine preserves identity. Do not describe it as slimming, reshaping, face s
 - Use `scripts/smooth.sh` when the user wants smoothing only with no color or white-balance change.
 - Use `scripts/mask.sh` when the user wants a skin, valid-skin, face, or person mask/matte.
 - Use `scripts/crop.sh` when the user wants crop-only ID/passport/visa/headshot/avatar output, optionally with a solid background color.
-- Use `scripts/outfit.sh` when the user wants clothing replacement only. The outfit id must come from the server-maintained approved catalog; never accept or invent an arbitrary garment asset.
+- Use `scripts/outfit.sh` when the user wants clothing replacement only. The outfit id must come from the approved catalog; never accept or invent a custom prompt or outfit id.
 - Use `scripts/outfits.sh` before clothing replacement to discover currently enabled outfit ids. Do not infer an id from a garment name.
 - Use `scripts/id-pack.sh` when the user wants a complete ID/passport photo delivery package: one graded/smoothed master, multiple specs, upload-ready files, compliance report, and optional print sheets.
 - Use `scripts/id-check.sh` when the user wants to validate an ID photo against a spec or understand compliance warnings.
@@ -112,8 +112,9 @@ Select only an id returned by that command, then replace clothing:
 scripts/outfit.sh <input-image> <output.png> <approved-outfit-id> [long-edge]
 ```
 
-- Only use ids returned by `GET /v1/outfits`; the API rejects arbitrary outfit ids and does not accept user-supplied clothing images.
-- If the requested clothing is absent, explain that only maintained styles are allowed; do not substitute an arbitrary URL or upload.
+- Only use ids returned by `GET /v1/outfits`; the API maps each approved id to its controlled generation prompt and rejects custom prompts or arbitrary ids.
+- The catalog groups styles as `male`, `female`, `kids`, or `unisex`; use the category and localized name/description to help select a suitable style.
+- If the requested clothing is absent, explain that only catalog styles are available; do not substitute a custom prompt, URL, or upload.
 - The service protects the detected facial oval with the face mask and calls the configured Motu asynchronous workflow.
 - Default output long edge is 1536px; the service bounds requests to 512–2048px.
 - Clothing generation must preserve the face and identity. Report upstream failures or timeouts instead of silently returning the original image.

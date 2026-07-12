@@ -24,9 +24,9 @@ if not available:
     print("# No approved outfits are currently available.")
     sys.exit(0)
 print("# Use one of these ids with scripts/outfit.sh or scripts/id-pack.sh")
-for item in sorted(available, key=lambda value: (value.get("order", 0), value.get("id", ""))):
-    print("%-24s %s" % (
-        item.get("id", ""),
+for item in sorted(available, key=lambda value: (value.get("category", ""), value.get("order", 0), value.get("id", ""))):
+    print("%-8s %-32s %s" % (
+        item.get("category", "unisex"), item.get("id", ""),
         item.get("name_zh") or item.get("name") or item.get("description") or "",
     ))
 '
