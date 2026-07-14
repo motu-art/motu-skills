@@ -13,8 +13,11 @@ The engine preserves identity. Do not describe it as slimming, reshaping, face s
 
 - Require `curl` and `python3`.
 - Read `MCE_API_BASE` from the environment; default is `https://mce.motu.art`.
-- Read `MCE_API_KEY` from the environment when auth is enabled; send it only as `X-API-Key`.
-- Never hard-code API keys. If a key is missing and the service requires one, ask the user for it or ask them to export it.
+- Read `MCE_API_KEY` from the environment; send it only as `X-API-Key`.
+- If the key is missing, direct the user to `https://mce.motu.art/account` (English: `/en/account`) to sign in by email and create one. Ask them to export it securely in their own environment; do not ask them to paste the full key into chat.
+- Never hard-code, print, log, commit, or expose API keys in browser/client code. The full key is shown once and can be rotated or revoked from the account page.
+- Request only the scopes needed: `catalog:read` for discovery, `portrait:process` for grading/smoothing/masks, `id-photo:process` for ID-photo workflows, and `outfit:process` for outfit replacement. An ID package with an outfit needs both `id-photo:process` and `outfit:process`.
+- Processing calls consume account credits; catalog discovery does not. Surface `402 insufficient_credits` instead of retrying.
 - Check service health with `curl -sS "${MCE_API_BASE:-https://mce.motu.art}/v1/health"` when diagnosing connectivity.
 
 ## Choose The Workflow

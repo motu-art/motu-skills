@@ -62,7 +62,7 @@ curl -fsSL https://mce.motu.art/downloads/motu-color-engine-skill.tar.gz \
 
 ```bash
 export MCE_API_BASE=https://mce.motu.art   # default; can omit
-export MCE_API_KEY=<your-key>              # invite-only, see below
+export MCE_API_KEY=<your-key>              # create at https://mce.motu.art/account
 ```
 
 Requires `curl` and `python3`.
@@ -125,7 +125,11 @@ The default generation long edge is 1536px and the supported range is 512–2048
 
 ## API key
 
-Keys are invite-only during early access. Email **hi@motu.art** with your use case.
+Sign in with an email verification code at **https://mce.motu.art/account** and create a
+dedicated key. The full value is displayed once: copy it immediately, store it securely,
+and export it as `MCE_API_KEY`; never commit it or paste it into chat. Grant only the scopes
+the workflow needs. ID-photo packages with outfit replacement require both
+`id-photo:process` and `outfit:process`. Calls consume the account's available credits.
 
 ## Links
 

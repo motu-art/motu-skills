@@ -1,8 +1,21 @@
 # MotuArt Color Engine — API reference
 
 Base URL: `$MCE_API_BASE` (default `https://mce.motu.art`).
-Auth: if enabled, send `X-API-Key: $MCE_API_KEY` (or `Authorization: Bearer $MCE_API_KEY`)
-on every endpoint **except** `/v1/health`.
+Auth: create a key at `https://mce.motu.art/account` (English: `/en/account`), then send
+`X-API-Key: $MCE_API_KEY` (or `Authorization: Bearer $MCE_API_KEY`) on every endpoint
+**except** `/v1/health`. The full key is displayed once; store it securely and rotate or
+revoke it from the account page if exposed.
+
+Scopes:
+- `catalog:read` — styles, crop specs and approved outfits.
+- `portrait:process` — process, smooth and mask.
+- `id-photo:process` — crop, id-pack, id-check, optimize and print-sheet.
+- `outfit:process` — standalone outfit replacement. Also required in addition to
+  `id-photo:process` or `portrait:process` when those requests include `outfit_id`.
+
+Successful processing calls consume account credits; catalog requests do not. A `402`
+response uses `detail.code="insufficient_credits"` and includes `required`, `available`,
+and whether the request included outfit replacement.
 
 ## GET /v1/health
 Liveness/version. No key required.
