@@ -86,7 +86,7 @@ scripts/crop.sh <input-image> <output-image> [spec-id] [bg-color] [pad-color]
 ## Make ID Photo Packages
 
 ```bash
-scripts/id-pack.sh <input-image> <output-dir> [specs] [style-id] [smooth-strength] [bg-color] [upload] [print-sheet]
+scripts/id-pack.sh <input-image> <output-dir> [specs] [style-id] [smooth-strength] [bg-color] [upload] [print-sheet] [outfit-id] [outfit-long-edge]
 ```
 
 - Use this for passport/visa/ID-photo deliverables rather than calling `grade.sh` once per spec. The API generates one graded/smoothed master first, then crops multiple specs from that master so colour and retouching stay consistent.
@@ -95,6 +95,8 @@ scripts/id-pack.sh <input-image> <output-dir> [specs] [style-id] [smooth-strengt
 - `bg-color` defaults to `default`, which applies each spec's standard background palette. Use `white`, `blue`, `light_blue`, `red`, or `#RRGGBB` when the user asks and the spec allows it.
 - `upload` defaults to `true`, writing upload-optimized JPG files using the spec's `upload` rules from `crop_specs.json`.
 - `print-sheet` is optional, e.g. `6x4` or `a4`; when specs have different sizes, separate sheets may be generated.
+- `outfit-id` is optional. When present, it must be an id returned by `scripts/outfits.sh`; omitted keeps the original clothing.
+- `outfit-long-edge` controls the upstream outfit result size, defaults to 1536, and is bounded by the service to 512–2048px.
 - Output folder contains `master.png`, `single/`, `upload/`, `print/`, and `report.json`. Surface compliance status and warnings from the report.
 - When the user requests a supported outfit, pass its approved catalog id. Outfit replacement runs before the corrected master is generated, so all crop specs share the same clothing result.
 
