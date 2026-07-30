@@ -1,0 +1,4 @@
+interface:
+  display_name: "参考图精选案例复刻"
+  short_description: "分析参考图并用默认身份生成可发布的完整精选形象照案例"
+  default_prompt: "使用 $reference-showcase-replication 分析这张参考图并新增一个精选案例。"
