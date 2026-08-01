@@ -2,9 +2,10 @@
 
 Base URL: `$MCE_API_BASE` (default `https://mce.motu.art`).
 Auth: create a key at `https://mce.motu.art/account` (English: `/en/account`), then send
-`X-API-Key: $MCE_API_KEY` (or `Authorization: Bearer $MCE_API_KEY`) on every endpoint
-**except** `/v1/health`. The full key is displayed once; store it securely and rotate or
-revoke it from the account page if exposed.
+`X-API-Key: $MCE_API_KEY` (or `Authorization: Bearer $MCE_API_KEY`) on private and
+processing endpoints. `/v1/health` and public Headshots discovery endpoints do not need
+a key. The full key is displayed once; store it securely and rotate or revoke it from
+the account page if exposed.
 
 Scopes:
 - `catalog:read` — styles, crop specs and approved outfits.
@@ -12,6 +13,8 @@ Scopes:
 - `id-photo:process` — crop, id-pack, id-check, optimize and print-sheet.
 - `outfit:process` — standalone outfit replacement. Also required in addition to
   `id-photo:process` or `portrait:process` when those requests include `outfit_id`.
+- `headshot:process` — private AI Headshots projects, reference preparation,
+  generation, candidates, post-processing, and exports. See `headshots-api.md`.
 
 Successful processing calls consume account credits; catalog requests do not. A `402`
 response uses `detail.code="insufficient_credits"` and includes `required`, `available`,

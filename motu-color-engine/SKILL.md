@@ -1,6 +1,6 @@
 ---
 name: motu-color-engine
-description: AI portrait color grading, skin-tone correction, identity-preserving skin smoothing, skin/person/face mask export, approved clothing replacement, and ID/passport/headshot/avatar production through the MotuArt Color Engine HTTP API. Use for grading or retouching portraits, normalizing skin tone, exporting mattes, batch-processing portraits, replacing clothing with a server-approved outfit, cropping to ID/passport/visa/headshot specs, replacing an ID-photo background, validating compliance, optimizing upload files, or creating print sheets. Trigger examples include portrait grading, skin tone, retouch, skin mask, outfit replacement, change clothes, ID photo, passport photo, visa photo, headshot, crop to size, background swap, print sheet, 调色, 肤色, 磨皮, 蒙版, 人像调色, 换装, 换衣, 服装替换, 证件照, 裁剪, 换底, 合规检查, 排版, 一寸, 二寸.
+description: AI portrait grading, skin-tone correction, identity-preserving smoothing, mask export, approved clothing replacement, professional AI Headshots generation, and ID/passport/headshot/avatar production through the MotuArt Color Engine HTTP API. Use for retouching portraits, normalizing skin tone, exporting mattes, replacing clothing, preparing identity references and generating professional headshot candidates, cropping to ID/passport/visa specs, replacing ID-photo backgrounds, checking compliance, optimizing uploads, or creating print sheets. Triggers include portrait grading, skin tone, retouch, skin mask, outfit replacement, AI headshots, professional headshot, business portrait, corporate portrait, LinkedIn photo, ID photo, passport photo, visa photo, background swap, print sheet, 调色, 肤色, 磨皮, 蒙版, 人像调色, AI形象照, 职业形象照, 商务形象照, 企业头像, 换装, 证件照, 裁剪, 换底, 合规检查, 排版, 一寸, 二寸.
 ---
 
 # Motu Color Engine
@@ -16,7 +16,7 @@ The engine preserves identity. Do not describe it as slimming, reshaping, face s
 - Read `MCE_API_KEY` from the environment; send it only as `X-API-Key`.
 - If the key is missing, direct the user to `https://mce.motu.art/account` (English: `/en/account`) to sign in by email and create one. Ask them to export it securely in their own environment; do not ask them to paste the full key into chat.
 - Never hard-code, print, log, commit, or expose API keys in browser/client code. The full key is shown once and can be rotated or revoked from the account page.
-- Request only the scopes needed: `catalog:read` for discovery, `portrait:process` for grading/smoothing/masks, `id-photo:process` for ID-photo workflows, and `outfit:process` for outfit replacement. An ID package with an outfit needs both `id-photo:process` and `outfit:process`.
+- Request only the scopes needed: `catalog:read` for portrait/ID discovery, `portrait:process` for grading/smoothing/masks, `id-photo:process` for ID-photo workflows, `outfit:process` for outfit replacement, and `headshot:process` for private AI Headshots projects and generation. An ID package with an outfit needs both `id-photo:process` and `outfit:process`.
 - Processing calls consume account credits; catalog discovery does not. Surface `402 insufficient_credits` instead of retrying.
 - Check service health with `curl -sS "${MCE_API_BASE:-https://mce.motu.art}/v1/health"` when diagnosing connectivity.
 
@@ -32,9 +32,11 @@ The engine preserves identity. Do not describe it as slimming, reshaping, face s
 - Use `scripts/id-check.sh` when the user wants to validate an ID photo against a spec or understand compliance warnings.
 - Use `scripts/optimize.sh` when the user needs a website/upload-ready file with format, pixel size, DPI, or maximum KB constraints.
 - Use `scripts/print-sheet.sh` when the user wants cropped ID photos laid out on photo paper for printing.
+- Use `scripts/headshots.sh` when the user wants AI-generated professional, business, corporate, LinkedIn, or studio headshots. Keep reference preparation, confirmation, generation, candidate download, post-processing, and export as explicit stages; do not turn them into one automatic operation.
 - Use `scripts/styles.sh` to discover live style ids. Read `references/styles.md` only when the user needs style-selection guidance or offline context.
 - Use `scripts/crop-specs.sh` to discover live crop specs. Read `references/crop-specs.md` only when choosing specs or background palettes without live discovery.
 - Read `references/api.md` for endpoint parameters, response fields, headers, limits, and error codes.
+- Read `references/headshots-api.md` before operating the AI Headshots workflow or when the user needs its raw API details.
 
 ## Grade Portraits
 
@@ -123,6 +125,72 @@ scripts/outfit.sh <input-image> <output.png> <approved-outfit-id> [long-edge]
 - The service protects the detected facial oval with the face mask and calls the configured Motu asynchronous workflow.
 - Default output long edge is 1536px; the service bounds requests to 512–2048px.
 - Clothing generation must preserve the face and identity. Report upstream failures or timeouts instead of silently returning the original image.
+
+## Create AI Headshots
+
+Use one work directory for the whole staged workflow. The script stores non-secret ids,
+responses, and configuration in `headshots.json`; it never stores `MCE_API_KEY`.
+
+Discover current options:
+
+```bash
+scripts/headshots.sh catalog [locale]
+```
+
+Prepare a graded, optionally smoothed, purpose-cropped identity reference:
+
+```bash
+scripts/headshots.sh prepare <input-image> <work-dir> \
+  [--scene ID] [--garment male|female] [--skin-base ID] [--smoothing 0..1] \
+  [--crop-spec ID] [--crop-anchor auto|center|manual] \
+  [--crop-rect X,Y,W,H] [--rotation DEG]
+```
+
+- Inspect `source-check.json` and `reference-preview.png` before continuing.
+- Surface ineligible reasons and warnings. Do not submit generation for an ineligible source.
+- `skin-base` performs colour/skin-tone preparation; `smoothing=0` preserves natural texture.
+- Use an automatic crop unless the user provides a complete normalized manual rectangle.
+- Never confirm the reference without the user approving the preview.
+
+After approval, freeze that preview as the identity reference:
+
+```bash
+scripts/headshots.sh confirm <work-dir>
+```
+
+Submit a compatible generation plan without waiting for the asynchronous worker:
+
+```bash
+scripts/headshots.sh generate <work-dir> [--scene ID] [--batch-size 1|2|4] \
+  [--style ID] [--pose ID] [--outfit ID] [--background ID] \
+  [--ratio 1:1|4:5|3:4] [--framing auto|close_up|half_body|three_quarter]
+```
+
+- Let the recommendation endpoint fill omitted options and correct incompatible defaults.
+- Use only ids returned by the live Headshots catalog. Never send custom generation prompts.
+- Generation consumes credits per requested image. Surface `402` and do not retry unchanged.
+- The command submits one job and returns; it does not hide asynchronous work behind a long synchronous call.
+
+Check and download results explicitly:
+
+```bash
+scripts/headshots.sh status <work-dir>
+scripts/headshots.sh download <work-dir>
+```
+
+Download only after the job is `completed`. Show all candidates rather than silently selecting one.
+
+Post-process a user-selected candidate and optionally export that render:
+
+```bash
+scripts/headshots.sh render <work-dir> --candidate ID-or-ordinal --style ID [--locale LOCALE]
+scripts/headshots.sh export <work-dir> --candidate ID-or-ordinal [--render] \
+  [--crop SPEC] [--format jpeg|png|webp] [--quality 70..100]
+```
+
+- Require an explicit candidate id or ordinal.
+- Without `--render`, export the generated master candidate. With `--render`, use the latest explicit render saved in the work directory.
+- Keep `project_id`, `reference_id`, `job_id`, and derivative ids so an interrupted workflow can resume.
 
 ## Check ID Photo Compliance
 
