@@ -52,6 +52,8 @@ output_ratio
 
 Check enabled states and the selected scene's `compatibility` lists. Inspect the scene's `lighting_prompt`; do not select a scene whose fixed rim/backlight conflicts with the reference. Check `allowed_framings_for_pose`.
 
+A showcase may also serve additional scenes: set optional `configuration.scene_ids` (primary `scene_id` first). Every listed scene must whitelist the recipe's style/pose/background/outfit in its `compatibility`; the loader validates each one. Omit `scene_ids` for single-scene showcases (the loader defaults it to `[scene_id]`).
+
 For desk-dependent poses, also update `_POSE_MIN_FRAMING`, `_DESK_POSES`, and `_DESK_BACKGROUNDS` in `src/mce/headshot_catalog.py` as applicable.
 
 ## Add missing resources
@@ -63,6 +65,8 @@ Add missing items to the relevant JSON:
 - outfit: category, names/descriptions, `products: ["headshot"]`, garment prompts and presentation prompt.
 
 Write prompts from observable construction rather than broad style labels. Be explicit about collar geometry, sleeve endpoint, hand placement, body rotation, light direction and forbidden alternatives when those details matter.
+
+Keep pose prompts identity-agnostic: describe body, arm and hand geometry only, never hairstyle, hair length or hair color — those belong to the identity layer. A gesture constraint (for example "touch the hair at the temple without pulling it forward") is fine; prescribing where hair lies is not.
 
 Append new IDs to every intended scene compatibility list.
 
@@ -171,4 +175,4 @@ Run:
 
 Run `npm run build` in `web/` when Hero or frontend files change.
 
-Inspect `assets/mce/headshots/previews/upload-manifest.json`. Upload only when requested. Note that the landing page currently displays the first eight enabled showcases by `order`; `featured: true` alone does not guarantee placement.
+Inspect `assets/mce/headshots/previews/upload-manifest.json`. Upload only when requested. Note that the landing page displays eight enabled showcases: `featured: true` first, newest (highest `order`) first within each group. Non-featured items appear only after all featured ones; the showcases index page still lists everything by ascending `order`.
