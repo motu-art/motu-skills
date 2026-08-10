@@ -38,6 +38,28 @@ you never draw a crop box by hand.
 | `schengen_visa` | Schengen/UK visa | 413×531px | 35×45mm@300dpi |
 | `japan_visa` | Japan visa | 531×531px | 45×45mm@300dpi |
 | `canada_visa` | Canada visa/immigration | 590×826px | 50×70mm@300dpi |
+| `china_visa` | China visa printed photo | 390×567px | 33×48mm@300dpi; digital upload uses a separate crop |
+| `us_passport_printed` | US passport (paper application) | 600×600px | 51×51mm@300dpi |
+| `japan_passport` | Japan passport | 413×531px | 35×45mm@300dpi |
+| `canada_passport_printed` | Canada passport (paper application) | 590×826px | 50×70mm@300dpi |
+| `uk_passport_printed` | UK printed passport photo | 413×531px | 35×45mm@300dpi |
+| `uk_visa` | UK visa or permission digital photo | 600×750px minimum | JPG/JPEG, 50KB–6MB |
+| `malaysia_passport_photo` / `malaysia_evisa` | Malaysia passport supplied-photo cases / eVISA | 413×591px | 35×50mm@300dpi |
+| `thailand_passport_photo` | Thailand passport capture preparation | 413×531px illustrative crop | live capture; not a submission file |
+| `thailand_visa` | Thailand visa | 413×531px | 35×45mm@300dpi |
+| `vietnam_passport_photo` / `vietnam_evisa` | Vietnam passport / e-visa | 472×709px | 40×60mm@300dpi |
+| `philippines_passport_photo` | Philippines passport live-capture readiness reference | 413×531px | 35×45mm@300dpi |
+| `philippines_visa_online` | Philippines online visa | 600×600px | digital only |
+| `australia_passport_printed` | Australia passport (paper application) | 413×531px | 35×45mm@300dpi |
+| `australia_visa_photo` | Australia visa supplied photo when explicitly requested | 35×45mm @300dpi | channel-specific |
+| `korea_passport` / `korea_visa` | Korea passport / visa | 413×531px | 35×45mm@300dpi |
+| `singapore_passport_online` / `singapore_visa_online` | Singapore passport / visa online | 400×514px | digital only |
+
+Some passport and visa channels capture the applicant live instead of accepting a
+prepared file. Specs marked `capture_channel_limited` or `live_capture_only` must
+surface that limitation; they are not a substitute for an in-person or in-app capture.
+Specs marked `editing_restricted` should be used without grading, smoothing, outfit
+replacement, background synthesis, or other appearance-changing processing.
 
 ## portrait specs (no background palette)
 

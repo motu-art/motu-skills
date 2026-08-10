@@ -107,9 +107,13 @@ Typical package contents:
 - `print/` — 6x4 / 4x6 / A4 print sheets when a paper size is requested;
 - JSON metadata with trace id, crop info, compliance status and warnings.
 
-Common spec ids include `passport_cn`, `id_card_cn`, `one_inch`, `two_inch`, `us_visa`,
-`schengen_visa`, `japan_visa` and `canada_visa`. Run `scripts/crop-specs.sh` for the
-current list.
+The passport/visa catalog pairs both purposes for CN, US, JP, CA, GB, MY, TH, VN,
+PH, AU, KR and SG. Common ids include `passport_cn`, `china_visa`,
+`us_passport_printed`, `us_visa`, `japan_passport`, `japan_visa`,
+`canada_passport_printed`, `canada_visa`, `korea_passport`, and `korea_visa`.
+Run `scripts/crop-specs.sh` for the current list and inspect each spec's processing
+policy: some application routes require live capture and some prohibit edited or
+AI-altered photographs.
 
 ## Outfit workflow
 
