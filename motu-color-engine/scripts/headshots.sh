@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Staged AI-headshot workflow over the Motu Color Engine HTTP API.
-# Usage: headshots.sh <catalog|prepare|confirm|generate|status|download|render|export> ...
+# Usage: headshots.sh <catalog|people|prepare|confirm|start-person|use-person|remove-person|generate|status|download|render|export> ...
 set -euo pipefail
 
 BASE="${MCE_API_BASE:-https://mce.motu.art}"
@@ -10,10 +10,14 @@ usage() {
   cat >&2 <<'EOF'
 Usage:
   headshots.sh catalog [locale]
+  headshots.sh people [limit]
   headshots.sh prepare <input> <work-dir> [--scene ID] [--garment male|female]
       [--skin-base ID] [--smoothing 0..1] [--crop-spec ID]
       [--crop-anchor auto|center|manual] [--crop-rect X,Y,W,H] [--rotation DEG]
   headshots.sh confirm <work-dir>
+  headshots.sh start-person <person-reference-id> <work-dir> [--scene ID]
+  headshots.sh use-person <work-dir> <person-reference-id>
+  headshots.sh remove-person <person-reference-id>
   headshots.sh generate <work-dir> [--scene ID] [--batch-size 1|2|4]
       [--style ID] [--pose ID] [--outfit ID] [--background ID]
       [--ratio 1:1|4:5|3:4] [--framing auto|close_up|half_body|three_quarter]
@@ -143,6 +147,19 @@ for key in ("scenes", "generation_styles", "poses", "outfits", "backgrounds"):
 PY
     ;;
 
+  people)
+    require_key
+    limit="${1:-20}" response="$(mktemp)"
+    trap 'rm -f "$response"' EXIT
+    api_json GET "/v1/headshots/person-references?limit=$limit" "$response"
+    python3 - "$response" <<'PY'
+import json, pathlib, sys
+d = json.loads(pathlib.Path(sys.argv[1]).read_text())
+for person in d.get("people", []):
+    print(person.get("person_reference_id"), person.get("garment_preference") or "-", person.get("last_used_at") or "-")
+PY
+    ;;
+
   prepare)
     require_key
     input="${1:?prepare requires an input image}"
@@ -168,8 +185,12 @@ PY
     state="$work/headshots.json"
     project_response="$(mktemp)" inspect_response="$(mktemp)" preview_request="$(mktemp)" preview_response="$(mktemp)"
     trap 'rm -f "$project_response" "$inspect_response" "$preview_request" "$preview_response"' EXIT
-    project_args=(-F "image=@$input" -F "entry_source=direct_upload")
-    [ -n "$scene" ] && project_args+=(-F "scene_id=$scene")
+    project_args=(-F "image=@$input")
+    if [ -n "$scene" ]; then
+      project_args+=(-F "entry_source=scene_gallery" -F "scene_id=$scene")
+    else
+      project_args+=(-F "entry_source=direct_upload")
+    fi
     api_json POST "/v1/headshots/projects" "$project_response" "${project_args[@]}"
     state_save "$state" project "$project_response"
     project_id="$(json_value "$project_response" project_id)"
@@ -225,6 +246,56 @@ PY
     reference_id="$(json_value "$response" reference_id)"
     api_download "/v1/headshots/projects/$project_id/references/$reference_id/image" "$work/reference.png"
     echo "confirmed $work/reference.png  reference=$reference_id"
+    ;;
+
+  start-person)
+    require_key
+    person_id="${1:?start-person requires a person reference id}"
+    work="${2:?start-person requires a work directory}"
+    shift 2
+    scene=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in --scene) scene="${2:?}"; shift 2;; *) usage;; esac
+    done
+    mkdir -p "$work"
+    state="$work/headshots.json" request="$(mktemp)" response="$(mktemp)"
+    trap 'rm -f "$request" "$response"' EXIT
+    python3 - "$request" "$person_id" "$scene" <<'PY'
+import json, pathlib, sys
+d={"person_reference_id":sys.argv[2]}
+if sys.argv[3]: d["scene_id"]=sys.argv[3]
+pathlib.Path(sys.argv[1]).write_text(json.dumps(d))
+PY
+    api_json POST "/v1/headshots/projects/from-person-reference" "$response" -H "Content-Type: application/json" --data-binary "@$request"
+    state_save "$state" project "$response"
+    state_save "$state" reference "$response"
+    project_id="$(json_value "$response" project_id)" reference_id="$(json_value "$response" reference_id)"
+    api_download "/v1/headshots/projects/$project_id/references/$reference_id/image" "$work/reference.png"
+    echo "started project=$project_id from person=$person_id  reference=$reference_id"
+    ;;
+
+  use-person)
+    require_key
+    work="${1:?use-person requires a work directory}"
+    person_id="${2:?use-person requires a person reference id}"
+    state="$work/headshots.json" project_id="$(state_get "$state" project_id)"
+    request="$(mktemp)" response="$(mktemp)"
+    trap 'rm -f "$request" "$response"' EXIT
+    printf '{"person_reference_id":"%s"}\n' "$person_id" > "$request"
+    api_json POST "/v1/headshots/projects/$project_id/person-reference" "$response" -H "Content-Type: application/json" --data-binary "@$request"
+    state_save "$state" project "$response"
+    state_save "$state" reference "$response"
+    reference_id="$(json_value "$response" reference_id)"
+    api_download "/v1/headshots/projects/$project_id/references/$reference_id/image" "$work/reference.png"
+    echo "updated project=$project_id  reference=$reference_id"
+    ;;
+
+  remove-person)
+    require_key
+    person_id="${1:?remove-person requires a person reference id}" response="$(mktemp)"
+    trap 'rm -f "$response"' EXIT
+    api_json DELETE "/v1/headshots/person-references/$person_id" "$response"
+    echo "removed person reference $person_id from the library; existing projects are unchanged"
     ;;
 
   generate)
@@ -293,7 +364,8 @@ PY
     python3 - "$response" <<'PY'
 import json, pathlib, sys
 d=json.loads(pathlib.Path(sys.argv[1]).read_text())
-print(f"job={d.get('job_id')} status={d.get('status')} error={d.get('error') or ''}")
+failure=d.get('failure_reason') or d.get('error') or ''
+print(f"job={d.get('job_id')} status={d.get('status')} failure={failure}")
 for c in d.get("candidates",[]): print(f"  {c.get('ordinal')}  {c.get('candidate_id')}  {c.get('status')}")
 PY
     ;;
@@ -308,7 +380,11 @@ PY
     python3 - "$response" <<'PY'
 import json, pathlib, sys
 d=json.loads(pathlib.Path(sys.argv[1]).read_text())
-if d.get("status") != "completed": raise SystemExit(f"job is {d.get('status')}, not completed")
+if d.get("status") not in {"completed", "partially_completed"}:
+    raise SystemExit(f"job is {d.get('status')}; candidates are not ready for download")
+if d.get("status") == "partially_completed":
+    ready=sum(1 for c in d.get("candidates",[]) if c.get("status")=="ready" and c.get("image_url"))
+    print(f"warning: job partially completed; downloading {ready} ready candidate(s)", file=sys.stderr)
 PY
     while IFS=$'\t' read -r ordinal candidate_id image_url; do
       [ -n "$image_url" ] || continue

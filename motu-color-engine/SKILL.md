@@ -33,6 +33,7 @@ The engine preserves identity. Do not describe it as slimming, reshaping, face s
 - Use `scripts/optimize.sh` when the user needs a website/upload-ready file with format, pixel size, DPI, or maximum KB constraints.
 - Use `scripts/print-sheet.sh` when the user wants cropped ID photos laid out on photo paper for printing.
 - Use `scripts/headshots.sh` when the user wants AI-generated professional, business, corporate, LinkedIn, or studio headshots. Keep reference preparation, confirmation, generation, candidate download, post-processing, and export as explicit stages; do not turn them into one automatic operation.
+- Use the Headshots person-reference library when the user wants to reuse a previously confirmed person. Distinguish starting a new project from applying that person to an existing project, and never delete existing projects when removing a library entry.
 - Use `scripts/styles.sh` to discover live style ids. Read `references/styles.md` only when the user needs style-selection guidance or offline context.
 - Use `scripts/crop-specs.sh` to discover live crop specs. Read `references/crop-specs.md` only when choosing specs or background palettes without live discovery.
 - Read `references/api.md` for endpoint parameters, response fields, headers, limits, and error codes.
@@ -137,6 +138,12 @@ Discover current options:
 scripts/headshots.sh catalog [locale]
 ```
 
+List reusable confirmed people:
+
+```bash
+scripts/headshots.sh people [limit]
+```
+
 Prepare a graded, optionally smoothed, purpose-cropped identity reference:
 
 ```bash
@@ -156,6 +163,22 @@ After approval, freeze that preview as the identity reference:
 
 ```bash
 scripts/headshots.sh confirm <work-dir>
+```
+
+Confirmation automatically adds the approved person to the account library, deduplicated
+by the confirmed reference image. To start a separate project from a saved person, or switch
+the active person inside an existing project while preserving its history:
+
+```bash
+scripts/headshots.sh start-person <person-reference-id> <new-work-dir> [--scene ID]
+scripts/headshots.sh use-person <existing-work-dir> <person-reference-id>
+```
+
+`use-person` appends a new immutable reference to the same project. Existing jobs, candidates,
+favorites, and prior references remain available. Removing a person is a library-only soft delete:
+
+```bash
+scripts/headshots.sh remove-person <person-reference-id>
 ```
 
 Submit a compatible generation plan without waiting for the asynchronous worker:
@@ -178,7 +201,8 @@ scripts/headshots.sh status <work-dir>
 scripts/headshots.sh download <work-dir>
 ```
 
-Download only after the job is `completed`. Show all candidates rather than silently selecting one.
+Download after the job is `completed` or `partially_completed`. For a partial result, surface the
+failure reason and download every ready candidate rather than discarding successful outputs.
 
 Post-process a user-selected candidate and optionally export that render:
 
@@ -224,6 +248,6 @@ scripts/print-sheet.sh <output-image> <paper> <input1> [input2 ...]
 
 - Upload limit is about 15 MB per image.
 - Supported upload formats are JPG, PNG, and WebP.
-- Processing is synchronous; batch jobs are repeated one-image calls.
+- Portrait, crop, and ID-photo processing calls are synchronous. Headshots generation is asynchronous and must be polled by job id.
 - Background replacement is limited to specs that declare `bg_colors`.
 - If a script fails, read its HTTP status and error detail before deciding whether to retry, change arguments, or ask the user for configuration.

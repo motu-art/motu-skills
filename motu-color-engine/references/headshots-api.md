@@ -23,7 +23,8 @@ These discovery endpoints are public:
 - `GET /v1/headshots/showcases/{showcase_id}?locale=en`
 - `GET /v1/headshots/scenes/{scene_id}?locale=en`
 
-Supported locales are `en`, `zh-CN`, `ja`, and `ko`.
+Supported published locales are `en`, `zh-CN`, `ja-JP`, `ko-KR`, `th-TH`, `vi-VN`,
+`ms-MY`, `id-ID`, and `fil-PH`. Short content-language aliases are accepted where documented.
 
 ## Workflow
 
@@ -46,6 +47,9 @@ preview. Generation consumes credits; preparation and discovery do not.
 - `image` — required JPG, PNG, or WebP, subject to the service upload limit.
 - `scene_id` — optional live scene id.
 - `entry_source` — normally `direct_upload`, or `scene_gallery` when a scene led to the upload.
+
+Do not combine `entry_source=direct_upload` with `scene_id`. Use `scene_gallery` when sending
+a scene id; `scene_gallery` requires one.
 
 Use `POST /v1/headshots/projects/{project_id}/source` with an `image` part to replace
 the source while preserving the project history. Use `GET /v1/headshots/projects/{id}`
@@ -108,6 +112,24 @@ After the user approves the downloaded preview, confirm an immutable reference w
 Download it with
 `GET /v1/headshots/projects/{project_id}/references/{reference_id}/image`.
 
+Confirmation also makes the person available in the owner's reusable person-reference library.
+Library deduplication uses the confirmed image content, not crop or skin-preparation parameters.
+
+### Reuse or remove a saved person
+
+- `GET /v1/headshots/person-references?limit=20` lists active library entries.
+- `GET /v1/headshots/person-references/{person_reference_id}/image` downloads a private preview.
+- `POST /v1/headshots/projects/from-person-reference` with
+  `{"person_reference_id":"hperson_...","scene_id":"professional_profile"}` starts a new project.
+- `POST /v1/headshots/projects/{project_id}/person-reference` with
+  `{"person_reference_id":"hperson_..."}` switches the active person inside the same project.
+- `DELETE /v1/headshots/person-references/{person_reference_id}` soft-deletes only the library entry.
+
+Applying a person to an existing project replaces its future preparation source and appends a new
+immutable reference version. Historical jobs, candidates, favorites, and references remain intact.
+Soft deletion does not remove library assets or any project data, and history import must not
+recreate a deleted entry.
+
 ## Configure and generate
 
 Use the public catalog or scene endpoint to discover ids. Never invent ids or generation
@@ -138,9 +160,11 @@ Submit the complete returned selection to `POST /v1/headshots/jobs` with an
 `Idempotency-Key` header. `batch_size` is `1`, `2`, or `4`; `output_ratio` is `1:1`,
 `4:5`, or `3:4`. A successful request returns HTTP 202 and a `job_id`.
 
-Generation is asynchronous. Query `GET /v1/headshots/jobs/{job_id}`. Terminal states are
-`completed` and `failed`; do not repeatedly submit a replacement job while one is queued
-or running. Candidate entries contain `candidate_id`, `ordinal`, `status`, and an
+Generation is asynchronous. Query `GET /v1/headshots/jobs/{job_id}`. Terminal states include
+`completed`, `partially_completed`, `failed`, and `cancelled`; do not repeatedly submit a
+replacement job while one is queued or running. A partially completed job may still contain
+billable ready candidates, so surface `failure_reason` and retain every successful result.
+Candidate entries contain `candidate_id`, `ordinal`, `status`, and an
 `image_url` when ready. Download each private URL with the same API key.
 
 Select a candidate with `POST /v1/headshots/jobs/{job_id}/selection` and
