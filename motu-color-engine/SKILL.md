@@ -24,6 +24,7 @@ The engine preserves identity. Do not describe it as slimming, reshaping, face s
 
 - Use `scripts/grade.sh` when the user wants color grading, skin-tone correction, a film/commercial look, or grading plus optional crop.
 - Use `scripts/smooth.sh` when the user wants smoothing only with no color or white-balance change.
+- Use `scripts/portrait-lighting.sh` when the user wants visibly more dimensional portrait lighting, a brighter facial plane, readable dark clothing, or a focused background without changing identity or geometry.
 - Use `scripts/mask.sh` when the user wants a skin, valid-skin, face, or person mask/matte.
 - Use `scripts/crop.sh` when the user wants crop-only ID/passport/visa/headshot/avatar output, optionally with a solid background color.
 - Use `scripts/outfit.sh` when the user wants clothing replacement only. The outfit id must come from the approved catalog; never accept or invent a custom prompt or outfit id.
@@ -42,7 +43,7 @@ The engine preserves identity. Do not describe it as slimming, reshaping, face s
 ## Grade Portraits
 
 ```bash
-scripts/grade.sh <input-image> <output-image> [style-id] [strength] [smooth-strength] [smooth-texture-retain] [crop-spec] [bg-color] [pad-color]
+scripts/grade.sh <input-image> <output-image> [style-id] [strength] [smooth-strength] [smooth-texture-retain] [crop-spec] [bg-color] [pad-color] [lighting-style] [lighting-strength]
 ```
 
 - Omit `style-id` for the default skin base, or choose a style from `scripts/styles.sh`.
@@ -52,6 +53,8 @@ scripts/grade.sh <input-image> <output-image> [style-id] [strength] [smooth-stre
 - Pass `crop-spec` when the same output should be graded and cropped in one API call.
 - Pass `bg-color` only with `crop-spec`; use an allowed palette name such as `white`, `blue`, or `red`, `default`, or explicit `#RRGGBB`.
 - Pass `pad-color` only with `crop-spec` when a specific padding color is needed; otherwise let the API edge-replicate.
+- Pass `lighting-style` only when the same output should also receive portrait light sculpting; choose `natural_dimension`, `soft_luminous`, or `studio_definition`. Omit it to preserve the existing grading result.
+- Use `lighting-strength` from `0` to `1` to override that preset's calibrated strength.
 - Report `skin_dE` from script output when summarizing quality; lower means closer skin color to the target.
 
 For a folder, run the script once per image. Keep batch loops serial unless the user asks for parallelism and accepts API/load implications.
@@ -65,6 +68,18 @@ scripts/smooth.sh <input-image> <output.png> [strength] [texture-retain]
 - Use this for pore/blemish softening without style, color, or white-balance changes.
 - Default `strength` is `0.6`.
 - Default `texture-retain` is `0.35`; raise it to preserve more natural texture.
+
+## Sculpt Portrait Lighting
+
+```bash
+scripts/portrait-lighting.sh <input-image> <output.png> [style] [strength]
+```
+
+- Styles are `natural_dimension` (default), `soft_luminous`, and `studio_definition`.
+- Omit `strength` to use the calibrated default for the selected style; otherwise use `0`–`1`.
+- `soft_luminous` prioritizes a luminous face and open dark midtones; `natural_dimension` balances face, wardrobe and background; `studio_definition` adds the strongest background focus and local definition.
+- The operation reshapes luminance relationships only. It never moves facial features, changes face/body geometry, or regenerates image content.
+- Use it independently after another editor, or as an explicit post-process after the user selects a Headshots candidate once that integration is available.
 
 ## Export Masks
 
@@ -208,11 +223,13 @@ Post-process a user-selected candidate and optionally export that render:
 
 ```bash
 scripts/headshots.sh render <work-dir> --candidate ID-or-ordinal --style ID [--locale LOCALE]
+scripts/headshots.sh light <work-dir> --candidate ID-or-ordinal [--style ID] [--strength 0..1] [--render]
 scripts/headshots.sh export <work-dir> --candidate ID-or-ordinal [--render] \
   [--crop SPEC] [--format jpeg|png|webp] [--quality 70..100]
 ```
 
 - Require an explicit candidate id or ordinal.
+- `light` without `--render` creates an immutable lighting Render from the Candidate master. With `--render`, it uses the latest saved Render as its source, allowing an explicit grade → light chain without overwriting either version.
 - Without `--render`, export the generated master candidate. With `--render`, use the latest explicit render saved in the work directory.
 - Keep `project_id`, `reference_id`, `job_id`, and derivative ids so an interrupted workflow can resume.
 

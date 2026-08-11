@@ -188,6 +188,38 @@ render with `POST /v1/headshots/candidates/{candidate_id}/renders`:
 
 Download `GET /v1/headshots/renders/{render_id}/image`.
 
+Create an immutable portrait-lighting Render directly from the Candidate master:
+
+```json
+{
+  "render_kind": "portrait_lighting",
+  "lighting_style": "natural_dimension",
+  "lighting_strength": 0.70
+}
+```
+
+To apply lighting after an existing grade, include that grade's explicit
+`"source_render_id": "hrender_..."`. The response identifies `render_kind`,
+`source_render_id`, `lighting_style`, and the resolved `lighting_strength`. The Candidate
+master and every earlier Render remain unchanged; repeated identical requests reuse the
+same cached Render.
+
+For the preferred single-pass Headshots workflow, send the approved grade selection
+in the same request instead of `source_render_id`:
+
+```json
+{
+  "render_kind": "portrait_lighting",
+  "base_id": "motu_business_neutral",
+  "flavour_id": null,
+  "lighting_style": "natural_dimension",
+  "lighting_strength": 0.70
+}
+```
+
+This runs grading and portrait lighting in one pipeline decode/parse/render pass and
+creates one immutable output Render from the Candidate master.
+
 ## Export
 
 Create a controlled crop with `POST /v1/headshots/candidates/{candidate_id}/exports`:

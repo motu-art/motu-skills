@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Staged AI-headshot workflow over the Motu Color Engine HTTP API.
-# Usage: headshots.sh <catalog|people|prepare|confirm|start-person|use-person|remove-person|generate|status|download|render|export> ...
+# Usage: headshots.sh <catalog|people|prepare|confirm|start-person|use-person|remove-person|generate|status|download|render|light|export> ...
 set -euo pipefail
 
 BASE="${MCE_API_BASE:-https://mce.motu.art}"
@@ -25,6 +25,8 @@ Usage:
   headshots.sh status <work-dir>
   headshots.sh download <work-dir>
   headshots.sh render <work-dir> --candidate ID|ORDINAL --style ID [--locale LOCALE]
+  headshots.sh light <work-dir> --candidate ID|ORDINAL [--style natural_dimension|soft_luminous|studio_definition]
+      [--strength 0..1] [--render]
   headshots.sh export <work-dir> --candidate ID|ORDINAL [--render]
       [--crop SPEC] [--format jpeg|png|webp] [--quality 70..100]
 EOF
@@ -423,6 +425,33 @@ PY
     render_id="$(json_value "$response" render_id)"
     api_download "/v1/headshots/renders/$render_id/image" "$work/renders/$render_id.png"
     echo "rendered $work/renders/$render_id.png"
+    ;;
+
+  light)
+    require_key
+    work="${1:?light requires a work directory}"; shift
+    candidate="" style_id="natural_dimension" strength="" use_render="false"
+    while [ "$#" -gt 0 ]; do
+      case "$1" in --candidate) candidate="${2:?}"; shift 2;; --style) style_id="${2:?}"; shift 2;; --strength) strength="${2:?}"; shift 2;; --render) use_render="true"; shift;; *) usage;; esac
+    done
+    [ -n "$candidate" ] || usage
+    state="$work/headshots.json" candidate_id="$(resolve_candidate "$state" "$candidate")"
+    source_render_id=""
+    [ "$use_render" = "false" ] || source_render_id="$(state_get "$state" render_id)"
+    request="$(mktemp)" response="$(mktemp)"
+    trap 'rm -f "$request" "$response"' EXIT
+    python3 - "$request" "$style_id" "$strength" "$source_render_id" <<'PY'
+import json, pathlib, sys
+d={"render_kind":"portrait_lighting","lighting_style":sys.argv[2]}
+if sys.argv[3]: d["lighting_strength"]=float(sys.argv[3])
+if sys.argv[4]: d["source_render_id"]=sys.argv[4]
+pathlib.Path(sys.argv[1]).write_text(json.dumps(d))
+PY
+    api_json POST "/v1/headshots/candidates/$candidate_id/renders" "$response" -H "Content-Type: application/json" --data-binary "@$request"
+    state_save "$state" render "$response"
+    render_id="$(json_value "$response" render_id)"
+    api_download "/v1/headshots/renders/$render_id/image" "$work/renders/$render_id.png"
+    echo "light sculpted $work/renders/$render_id.png"
     ;;
 
   export)
