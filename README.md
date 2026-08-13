@@ -76,7 +76,7 @@ curl -fsSL https://mce.motu.art/downloads/motu-color-engine-skill.tar.gz \
 
 ```bash
 export MCE_API_BASE=https://mce.motu.art   # default; can omit
-export MCE_API_KEY=<your-key>              # create at https://mce.motu.art/account
+export MCE_API_KEY=<your-key>              # create at https://mce.motu.art/en/account
 ```
 
 Requires `curl` and `python3`.
