@@ -24,6 +24,25 @@
         "segmentation",
         "image"
       ]
+    },
+    {
+      "name": "motu-video-h3",
+      "source": "./motu-video-h3",
+      "description": "Generate videos through the motu.art MiniMax Hailuo H3 workflow API — text-to-video, image-to-video, and start/end-frame video with structured shot-by-shot prompting.",
+      "author": {
+        "name": "Motu"
+      },
+      "homepage": "https://api.motu.art",
+      "repository": "https://github.com/motu-art/motu-skills",
+      "license": "MIT",
+      "keywords": [
+        "video",
+        "text-to-video",
+        "image-to-video",
+        "minimax",
+        "hailuo",
+        "animation"
+      ]
     }
   ]
 }
