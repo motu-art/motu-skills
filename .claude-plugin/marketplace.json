@@ -26,9 +26,9 @@
       ]
     },
     {
-      "name": "motu-video-h3",
-      "source": "./motu-video-h3",
-      "description": "Generate videos through the motu.art MiniMax Hailuo H3 workflow API — text-to-video, image-to-video, and start/end-frame video with structured shot-by-shot prompting.",
+      "name": "motu-video-minimax-h3",
+      "source": "./motu-video-minimax-h3",
+      "description": "Generate videos through the motu.art MiniMax Hailuo H3 workflow API — text-to-video, image-to-video, image+audio talking-head lip-sync, start/end-frame, and frames+audio video with structured shot-by-shot prompting.",
       "author": {
         "name": "Motu"
       },
@@ -39,9 +39,68 @@
         "video",
         "text-to-video",
         "image-to-video",
+        "lip-sync",
+        "talking-head",
         "minimax",
         "hailuo",
         "animation"
+      ]
+    },
+    {
+      "name": "motu-minimax-music3",
+      "source": "./motu-minimax-music3",
+      "description": "Generate music through the motu.art MiniMax Music 3 workflow API — instrumental tracks and full songs with vocals from a structured style brief plus optional lyrics.",
+      "author": {
+        "name": "Motu"
+      },
+      "homepage": "https://api.motu.art",
+      "repository": "https://github.com/motu-art/motu-skills",
+      "license": "MIT",
+      "keywords": [
+        "music",
+        "music-generation",
+        "songwriting",
+        "background-music",
+        "soundtrack",
+        "minimax"
+      ]
+    },
+    {
+      "name": "motu-ideogram4",
+      "source": "./motu-ideogram4",
+      "description": "Generate images through the motu.art Ideogram 4 workflow API — photos, illustrations, logos, posters, and images with readable rendered text.",
+      "author": {
+        "name": "Motu"
+      },
+      "homepage": "https://api.motu.art",
+      "repository": "https://github.com/motu-art/motu-skills",
+      "license": "MIT",
+      "keywords": [
+        "image",
+        "image-generation",
+        "text-to-image",
+        "poster",
+        "logo",
+        "typography",
+        "ideogram"
+      ]
+    },
+    {
+      "name": "motu-remove-watermark",
+      "source": "./motu-remove-watermark",
+      "description": "Remove watermarks, logos, timestamps, and text overlays from images through the motu.art workflow API — inpaints marked regions and returns a clean image.",
+      "author": {
+        "name": "Motu"
+      },
+      "homepage": "https://api.motu.art",
+      "repository": "https://github.com/motu-art/motu-skills",
+      "license": "MIT",
+      "keywords": [
+        "image",
+        "watermark-removal",
+        "inpainting",
+        "cleanup",
+        "restoration"
       ]
     }
   ]

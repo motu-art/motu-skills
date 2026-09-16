@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m json.tool /Users/zhongi/workspace/projects/motu/projects/motu-skills/.claude-plugin/marketplace.json)"
+    ]
+  }
+}

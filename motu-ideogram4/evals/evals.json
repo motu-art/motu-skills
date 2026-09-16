@@ -1,0 +1,42 @@
+{
+  "skill_name": "motu-ideogram4",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我做一张咖啡店开业海报，要有大标题「山丘咖啡 开业大酬宾」，复古插画风格，竖版。保存到当前工作目录下。",
+      "expected_output": "一张竖版 png 海报，通过 ideogram4 生成，prompt 中以引号包裹准确的标题文字并指定版式与风格",
+      "files": [],
+      "assertions": [
+        {"id": "png_exists", "text": "outputs/ 下存在有效的 PNG 图片文件"},
+        {"id": "portrait", "text": "图片为竖版 (height > width)"},
+        {"id": "text_in_prompt", "text": "prompt 中将标题文字放在引号内并要求渲染为可读文字"},
+        {"id": "style_specified", "text": "prompt 指定了明确的视觉风格（复古插画等）"},
+        {"id": "text_readable", "text": "图片中标题文字清晰可读、无明显错字"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "给我一张 16:9 的横版头图：清晨山谷里的无人咖啡摊，薄雾，电影感摄影。保存到当前工作目录下。",
+      "expected_output": "一张横版 png，尺寸为横版（如 1376x768 或 landscape preset），prompt 为摄影风格描述",
+      "files": [],
+      "assertions": [
+        {"id": "png_exists", "text": "outputs/ 下存在有效的 PNG 图片文件"},
+        {"id": "landscape", "text": "图片为横版 (width > height)"},
+        {"id": "photographic_style", "text": "prompt 描述了摄影媒介/光线/氛围（cinematic/mist/soft light 等）"},
+        {"id": "size_requested", "text": "请求的 width/height 为横版比例"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "为我们的笔记 App 设计一个扁平风格的应用图标：一只纸飞机，蓝白配色，圆角方形背景。保存到当前工作目录下。",
+      "expected_output": "一张接近方形的 png 图标设计稿",
+      "files": [],
+      "assertions": [
+        {"id": "png_exists", "text": "outputs/ 下存在有效的 PNG 图片文件"},
+        {"id": "near_square", "text": "图片接近正方形（方形 preset 或等宽高）"},
+        {"id": "flat_style", "text": "prompt 指定 flat / minimal 图标风格"},
+        {"id": "colors_specified", "text": "prompt 指定了配色（蓝白）"}
+      ]
+    }
+  ]
+}

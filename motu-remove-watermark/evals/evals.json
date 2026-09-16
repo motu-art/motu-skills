@@ -1,0 +1,41 @@
+{
+  "skill_name": "motu-remove-watermark",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "这张我们自己出的产品图 right corner 有个测试时打上的水印，帮我去掉，输出保持原分辨率。图片：product_marked.png。保存到当前工作目录下。",
+      "expected_output": "一张去除了水印的 png，通过 remove_watermark 生成，输入为 product_marked.png（本地文件自动上传）",
+      "files": ["assets/product_marked.png"],
+      "assertions": [
+        {"id": "png_exists", "text": "outputs/ 下存在有效的 PNG 图片文件"},
+        {"id": "watermark_gone", "text": "原图水印区域的标记被移除，无明显残影"},
+        {"id": "rest_preserved", "text": "水印以外的画面内容与原图一致（无大范围重绘）"},
+        {"id": "aspect_kept", "text": "输出宽高比与输入一致"},
+        {"id": "used_upload", "text": "本地文件通过 /oss/presigned-url 上传后提交（非 base64）"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "这张截图 shot.png 右下角有平台的时间戳和 logo，清理一下给我干净版本，长边 2048。",
+      "expected_output": "一张去除了时间戳与 logo 的 png，long_side=2048",
+      "files": ["assets/shot.png"],
+      "assertions": [
+        {"id": "png_exists", "text": "outputs/ 下存在有效的 PNG 图片文件"},
+        {"id": "marks_gone", "text": "右下角时间戳与 logo 被移除"},
+        {"id": "long_side_2048", "text": "输出长边为 2048px（±2%）"},
+        {"id": "not_recleaned", "text": "只运行一次清理（未对输出重复清理）"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "https://example-cdn.our-brand.com/hero_marked.jpg 这张我们自己 CDN 上的首图有水印，帮我处理干净。",
+      "expected_output": "通过 remove_watermark 处理 URL 输入图片并下载结果",
+      "files": [],
+      "assertions": [
+        {"id": "png_exists", "text": "outputs/ 下存在有效的 PNG 图片文件"},
+        {"id": "url_used_directly", "text": "直接以 URL 作为 image_url 提交（无需上传）"},
+        {"id": "watermark_gone", "text": "水印被移除"}
+      ]
+    }
+  ]
+}

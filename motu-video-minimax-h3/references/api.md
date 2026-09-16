@@ -1,7 +1,7 @@
 # motu.art Workflow API — reference (verified against live API 2026-08-21)
 
 Base URL: `https://api.motu.art`
-Auth: `Authorization: Bearer $MOTU_API_KEY` on every request.
+Auth: `Authorization: Bearer $MOTU_KEY` on every request.
 (Kong gateway rejects Python's default urllib User-Agent — the bundled script sends a custom UA.)
 
 ## Submit a workflow
@@ -38,8 +38,11 @@ Errors:
 
 ```
 GET /workflow/status?workflow_request_id={id}
-Authorization: Bearer $MOTU_API_KEY
+Authorization: Bearer $MOTU_KEY
 ```
+
+(The docs also document `GET /workflows/status/{id}`; the query-param form above is the one
+verified working against the live API and is what the script uses.)
 
 While running:
 ```json
@@ -68,16 +71,16 @@ On completion the same endpoint includes `result`:
 image for a follow-up i2v run.
 Signed OSS URLs expire after **14 days** — download promptly.
 
-## Upload a local image (for i2v / r2v)
+## Upload a local file (images for i2v/r2v/ia2v/ra2v, audio for ia2v/ra2v)
 
-`image_url` / `image_start_url` / `image_end_url` must be publicly reachable `http(s)://` URLs.
-Base64 data URIs are NOT accepted: they pass submit-time validation (202) but the job fails
-silently during processing (verified 2026-08-21, i2v + r2v).
+`image_url` / `image_start_url` / `image_end_url` / `audio` must be publicly reachable
+`http(s)://` URLs. Base64 data URIs are NOT accepted: they pass submit-time validation
+(202) but the job fails silently during processing (verified 2026-08-21, i2v + r2v).
 Upload local files through the OSS presign route:
 
 ```
 POST /oss/presigned-url
-Authorization: Bearer $MOTU_API_KEY
+Authorization: Bearer $MOTU_KEY
 Content-Type: application/json
 
 {"fileType": "image/png"}
@@ -88,8 +91,8 @@ Content-Type: application/json
 ```
 
 Then `PUT` the raw file bytes to `uploadUrl` with the **exact same `Content-Type`** you sent
-as `fileType` (the signature covers it), and use the returned `url` as the workflow's image input.
-`scripts/motu_video.py upload --file x.png` and the `--image*` flags do this automatically.
+as `fileType` (the signature covers it), and use the returned `url` as the workflow input.
+`scripts/motu_video.py upload --file x.png` and the `--image*`/`--audio` flags do this automatically.
 
 ## Workflow parameter sheets
 
@@ -115,6 +118,22 @@ as `fileType` (the signature covers it), and use the returned `url` as the workf
 | `duration` | no | 5 | 3–15 s |
 | `seed` | no | 0 | |
 
+### video_minimax_h3_ia2v — image+audio-to-video (talking head)
+
+| Param | Required | Default | Notes |
+|---|---|---|---|
+| `image_url` | no | — | portrait to animate; `<Picture 1>` |
+| `audio` | no | — | voice track; `<Audio 1>`; copied 1:1 into the final video |
+| `prompt` | no | built-in talking-head spec | max 6000 chars; see references/prompting.md |
+| `aspect_ratio` | no | `3:4 (Portrait Standard)` | full labels only |
+| `megapixels` | no | 0.4 | max 1 |
+| `duration` | no | 6 | max 15 s |
+| `seed` | no | 0 | |
+
+Semantics (from the official default prompt): the output is one uninterrupted fixed-camera
+shot that starts exactly on `<Picture 1>`; the visible speaking performance is driven
+exclusively by `<Audio 1>`, which is copied unaltered as the sole audio track.
+
 ### video_minimax_h3_r2v — start/end frame
 
 | Param | Required | Default | Notes |
@@ -124,6 +143,19 @@ as `fileType` (the signature covers it), and use the returned `url` as the workf
 | `prompt` | no | — | max 6000 chars |
 | `aspect_ratio` | no | `16:9 (Widescreen)` | |
 | `megapixels` | no | 0.4 | max 1 |
+| `duration` | no | 5 | 3–15 s |
+| `seed` | no | 0 | |
+
+### video_minimax_h3_ra2v — frames+audio-to-video
+
+| Param | Required | Default | Notes |
+|---|---|---|---|
+| `image_start_url` | no | — | referenced as `<Picture 1>` |
+| `image_end_url` | no | — | referenced as `<Picture 2>` |
+| `audio` | no | — | referenced as `<Audio 1>` |
+| `prompt` | no | — | **max 8000 chars** |
+| `aspect_ratio` | no | `16:9 (Widescreen)` | |
+| `megapixels` | no | **0.7** | 0.2–1 |
 | `duration` | no | 5 | 3–15 s |
 | `seed` | no | 0 | |
 

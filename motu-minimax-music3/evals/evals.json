@@ -1,0 +1,43 @@
+{
+  "skill_name": "motu-minimax-music3",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我在做一个咖啡品牌的产品页，需要一段 60 秒左右的背景音乐：温暖、慵懒的 lo-fi，有黑胶底噪，不要人声。保存到当前工作目录下。",
+      "expected_output": "一个 mp3 文件，通过 audio_minimax_music_3 生成，caption 为结构化英文音乐简报（含 no vocals 约束），max_duration ≈ 60-90",
+      "files": [],
+      "assertions": [
+        {"id": "mp3_exists", "text": "outputs/ 下存在有效的 MP3 音频文件"},
+        {"id": "duration_60s", "text": "音频时长在 45-90 秒之间"},
+        {"id": "no_vocals", "text": "caption 中显式排除人声（no vocals / fully instrumental）"},
+        {"id": "structured_caption", "text": "caption 为结构化英文简报（风格/情绪/乐器/编曲）"},
+        {"id": "max_duration_set", "text": "请求中设置了合理的 max_duration（≤ 120）"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我写一首歌：主题是深夜开车穿过城市，女声演唱，原声吉他伴奏，副歌要有记忆点。歌词你自己写，两段主歌两个副歌，大概两分钟。保存到当前工作目录下。",
+      "expected_output": "一个 mp3 文件，通过 audio_minimax_music_3 生成，带 lyrics（含 [Verse]/[Chorus] 段落标记）与描述女声+吉他的 caption，max_duration ≈ 120-150",
+      "files": [],
+      "assertions": [
+        {"id": "mp3_exists", "text": "outputs/ 下存在有效的 MP3 音频文件"},
+        {"id": "has_lyrics", "text": "请求包含 lyrics 字段，且使用 [Verse]/[Chorus] 等段落标记"},
+        {"id": "vocal_described", "text": "caption 描述了人声（female vocal）与伴奏（acoustic guitar）"},
+        {"id": "duration_2min", "text": "音频时长在 90-180 秒之间"},
+        {"id": "theme_match", "text": "歌词主题为深夜开车穿过城市"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "给我 15 秒的播客片头音乐，现代、干净、有点科技感，循环友好的结尾。",
+      "expected_output": "一个 mp3 文件，caption 提到 modern/clean/upbeat 与 loop-friendly 结尾，max_duration = 15-30",
+      "files": [],
+      "assertions": [
+        {"id": "mp3_exists", "text": "outputs/ 下存在有效的 MP3 音频文件"},
+        {"id": "duration_short", "text": "音频时长 ≤ 30 秒"},
+        {"id": "loop_friendly", "text": "caption 描述了干净的收尾或循环友好"},
+        {"id": "no_vocals", "text": "caption 显式排除人声"}
+      ]
+    }
+  ]
+}
