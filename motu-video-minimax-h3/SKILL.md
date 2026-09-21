@@ -98,8 +98,56 @@ Pick aspect ratio from the user's intent: 竖屏/手机/抖音/Reels → `9:16 (
 ## Writing the prompt — this is where quality comes from
 
 The model responds best to a **structured, shot-by-shot brief in English**, not a one-line
-description. The official example prompts (a product film, an action trailer, a comic
-sequence, a talking-head spec) all follow the same skeleton:
+description. Think of H3 as an AI film crew — director, DP, actor, sound recordist and
+composer in one. A vague wish ("一个古装女孩在雨中奔跑，电影感") lets the crew improvise:
+faces drift, the camera lurches without warning, costumes change color, dialogue drowns
+under the score. An executable directing plan turns 随机抽卡 into 可控拍摄. Design every
+generation with the **五步导演法**, layer by layer:
+
+**选对模式 → 锁定角色 → 拆解动作 → 设计镜头 → 分离声音**
+
+1. **Pick the task mode from the assets you hold — before writing anything.**
+   没有素材 → t2v (free-form, highest drift risk; concepts, ambience and empty shots);
+   有起点 → i2v (the prompt says what must stay identical to `<Picture 1>` and what
+   happens next — not a re-description of the image); 有起点和终点 → r2v (describe the
+   *in-between* as continuous action, not the two images); 只有结果 → **ra2v with only
+   `--image-end`** (back-fill the action path that leads to the end frame:
+   手碰杯沿→杯子倾斜→滑落→撞击→碎片静止); 要同时参考角色/动作/风格/声音 → ra2v
+   multimodal (or ia2v for talking heads).
+2. **Structure the prompt as three "crew departments"** — the official field format:
+   `integrated_multimodal_description` (director + DP: style, shot size, subject,
+   identity locks, sequential actions, camera moves, timestamped cuts, dialogue,
+   on-screen text — negative constraints close this field), `overall_soundscape`
+   (recordist: 1–4 sentences of ambience, action sounds and non-verbal human sounds —
+   **never repeat dialogue here**), `non_diegetic_music` (score: 1–3 sentences naming
+   instruments, tempo, volume dynamics and the ending — concrete mechanics, not abstract
+   moods like "epic music"; write `N/A` when no score is wanted).
+3. **Give every shot six elements: 风格＋景别＋主体＋动作＋镜头运动＋声音.** One primary
+   camera movement per shot — stacking 推/摇/环绕/跟拍/变焦 keywords in one sentence makes
+   them conflict. Camera movement is narrative, not decoration: pick the move that serves
+   the beat (slow push-in emphasizes face or key object, pull-back shows subject–environment
+   relation, pan reveals off-screen information, orbit signals arrival or power, static
+   holds performance). Multi-shot prompts timestamp every cut, strictly increasing,
+   covering the clip's `duration`.
+4. **Lock identity, decompose actions.** Open reference-image prompts by declaring what
+   stays invariant — facial features, hairstyle, costume style & color, props,
+   accessories, body proportions, position, scene layout, lighting direction — then break
+   complex actions into small observable steps (视线移向右侧 → 左手按住剑鞘 → 右手握住
+   剑柄 → 身体转向右后方 → 剑刃逐渐拔出). Write change *paths*, not results ("火光从
+   手臂向肩部扩散，衣袖逐渐转化为羽毛", never "she suddenly becomes a phoenix"). The more
+   complex the action, the fewer simultaneous demands in that shot — never big movement +
+   speech + camera move + scene change all at once.
+5. **Layer dialogue, ambience and score.** Stable speaker IDs across shots (S1, S2…);
+   define the voice at first appearance (age, gender, pitch, timbre, pace, accent/mood);
+   write dialogue as `The young woman (S1), calm, low and slightly breathy, says at a
+   measured pace: <d>[Chinese] 终于找到你了。</d>`; voice-overs must state that the
+   on-screen person's lips stay closed (else the model lip-syncs the wrong character);
+   the score ducks under dialogue ("music decreases in volume during the dialogue and
+   gently rises after").
+
+The official example prompts (a product film, an action trailer, a comic sequence, a
+talking-head spec) express the same plan as a free-form skeleton — equivalent content in
+prose shape:
 
 1. **Style & look** — one opening sentence: medium, lighting, palette, lens/texture
    ("Realistic live-action cinematic look, anamorphic lens, shallow depth of field, film grain…").
@@ -123,9 +171,12 @@ Don't cram 8 shots into 5 seconds.
 For ia2v talking heads the official default prompt is a full structured spec
 (`subject_definitions` / `summary` / `retention_analysis` / `detailed_description` /
 `overall_soundscape`) that pins identity, camera lock and 1:1 audio copy — copy its
-pattern when you need to customize. For the full guide — camera-movement vocabulary
-(推/拉/摇/移/跟/环绕/升降/甩镜), the ia2v spec, per-shot prompts for the long-form
-strategy, and the complete official example prompts — read `references/prompting.md`.
+pattern when you need to customize. For the full guide — the 五步导演法 in detail
+(mode-selection table, three-field structure, camera-movement narrative vocabulary
+推/拉/摇/移/跟/环绕/升降/甩镜, consistency-constraint patterns, the ia2v spec, the
+雨夜客栈 three-field worked example, the 六个高频翻车点 self-check, and the 万能提示词
+模板), per-shot prompts for the long-form strategy, and the complete official example
+prompts — read `references/prompting.md`.
 
 ## Long-form strategy: 按镜头拆解 → 逐镜生成 → 合并成片
 
