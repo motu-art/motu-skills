@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Generate images through the motu.art Ideogram 4 workflow API.
+"""Generate images through the motu.art Qwen Image 2.1 workflow API.
 
 Usage:
-  motu_image.py generate --prompt "..." [--width 1024] [--height 1024] [--cfg 2]
-                         [--temperature 0.3] [--seed N] [--out image.png]
-  motu_image.py status --request-id <uuid>
+  motu_qwen_image.py generate --prompt "..." [--size portrait] [--batch-size 1]
+                              [--seed N] [--out image.png]
+  motu_qwen_image.py status --request-id <uuid>
 
 Requires MOTU_KEY in the environment. Pass --dry-run to print the request
 without sending it (no API quota consumed).
@@ -20,15 +20,19 @@ import urllib.parse
 import urllib.request
 
 API_BASE = os.environ.get("MOTU_API_BASE", "https://api.motu.art")
-WORKFLOW = "ideogram4"
+WORKFLOW = "image_qwen_image_2_1_t2i"
 
-# Sensible presets; the API itself accepts 512-1536 per side.
+# Composition canvases; output is EXACTLY the requested size (no upscaling).
+# API accepts 512-2048 per side.
 SIZE_PRESETS = {
-    "square": (1024, 1024),
-    "portrait": (768, 1376),   # API default
-    "landscape": (1376, 768),
-    "story": (896, 1344),      # 2:3 vertical, social story size
-    "banner": (1344, 576),
+    "square": (1024, 1024),        # API default
+    "portrait": (1024, 1536),      # 2:3 vertical, posters
+    "landscape": (1536, 1024),     # 3:2 horizontal
+    "story": (1152, 2048),         # 9:16 vertical, social story size
+    "banner": (2048, 1152),        # 16:9 wide, web hero
+    "square-2k": (2048, 2048),     # max-detail canvases
+    "portrait-2k": (1536, 2048),
+    "landscape-2k": (2048, 1536),
 }
 
 
@@ -42,7 +46,7 @@ def api_key():
 def http(method, url, body=None, headers=None, timeout=120):
     req = urllib.request.Request(url, method=method)
     # Kong rejects urllib's default UA; send a neutral one.
-    req.add_header("User-Agent", "motu-ideogram4/1.0")
+    req.add_header("User-Agent", "motu-qwen-image/1.0")
     for k, v in (headers or {}).items():
         req.add_header(k, v)
     data = None
@@ -70,27 +74,18 @@ def build_payload(args):
             sys.exit("pass either --size or --width/--height, not both")
         width, height = SIZE_PRESETS[args.size]
     if width is None and height is None:
-        width, height = SIZE_PRESETS["portrait"]  # API default 768x1376
+        width, height = SIZE_PRESETS["square"]  # API default 1024x1024
     elif width is None or height is None:
         sys.exit("give both --width and --height (or use --size)")
     for name, v in (("width", width), ("height", height)):
-        if not 512 <= v <= 1536:
-            sys.exit(f"{name} must be 512-1536 (got {v})")
-    if args.cfg is not None and not 1 <= args.cfg <= 7:
-        sys.exit("--cfg must be 1-7")
-    if args.temperature is not None and not 0 <= args.temperature <= 1:
-        sys.exit("--temperature must be 0-1")
-    p = {"prompt": args.prompt, "width": width, "height": height}
-    if args.cfg is not None:
-        p["cfg"] = args.cfg
-    if args.temperature is not None:
-        p["temperature"] = args.temperature
-    if args.model:
-        p["model"] = args.model
+        if not 512 <= v <= 2048:
+            sys.exit(f"{name} must be 512-2048 (got {v})")
+    if not 1 <= args.batch_size <= 4:
+        sys.exit("--batch-size must be 1-4")
+    p = {"prompt": args.prompt, "width": width, "height": height,
+         "batch_size": args.batch_size}
     if args.seed is not None:
         p["seed"] = args.seed
-    if args.callback_url:
-        p["callback_url"] = args.callback_url
     if args.priority:
         p["priority"] = args.priority
     return p
@@ -108,6 +103,8 @@ def submit(payload, dry_run=False):
 
 
 def poll_once(request_id):
+    # Docs also show GET /workflows/status/{id}; that path form 500s on the
+    # gateway — the query-param form below is the one verified working.
     url = f"{API_BASE}/workflow/status?workflow_request_id={urllib.parse.quote(request_id)}"
     status, raw = http("GET", url, headers=authed_headers())
     if status != 200:
@@ -133,7 +130,7 @@ def poll(request_id, interval=5, timeout=900):
 def download(url, out_path):
     print(f"Downloading -> {out_path}", file=sys.stderr)
     req = urllib.request.Request(url)
-    req.add_header("User-Agent", "motu-ideogram4/1.0")
+    req.add_header("User-Agent", "motu-qwen-image/1.0")
     with urllib.request.urlopen(req, timeout=600) as resp, open(out_path, "wb") as f:
         while True:
             chunk = resp.read(1 << 20)
@@ -157,11 +154,17 @@ def cmd_generate(args):
     results = info.get("result") or []
     if not results:
         sys.exit(f"completed but no result URLs: {json.dumps(info, ensure_ascii=False)}")
-    out = args.out or f"image_{request_id[:8]}.png"
-    download(results[0]["url"], out)
-    meta = dict(results[0])
-    meta.pop("url", None)
-    print(json.dumps({"out": out, "request_id": request_id, **meta}, ensure_ascii=False))
+
+    stem = args.out[:-4] if args.out and args.out.lower().endswith(".png") else (
+        args.out or f"image_{request_id[:8]}")
+    outs = []
+    for i, r in enumerate(results, 1):
+        path = f"{stem}.png" if len(results) == 1 else f"{stem}_{i}.png"
+        download(r["url"], path)
+        outs.append({"path": path, "width": r.get("width"), "height": r.get("height"),
+                     "file_size": r.get("file_size")})
+    print(json.dumps({"outs": [o["path"] for o in outs], "request_id": request_id,
+                      "results": outs}, ensure_ascii=False))
 
 
 def cmd_status(args):
@@ -169,22 +172,21 @@ def cmd_status(args):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    g = sub.add_parser("generate", help="submit a generation and wait for the image")
-    g.add_argument("--prompt", required=True, help="image description, max 6000 chars")
+    g = sub.add_parser("generate", help="submit a generation and wait for the image(s)")
+    g.add_argument("--prompt", required=True, help="prose prompt, max 6000 chars")
     g.add_argument("--size", choices=sorted(SIZE_PRESETS),
                    help=f"preset: {', '.join(f'{k} {v[0]}x{v[1]}' for k, v in sorted(SIZE_PRESETS.items()))}")
-    g.add_argument("--width", type=int, help="512-1536 (default 768)")
-    g.add_argument("--height", type=int, help="512-1536 (default 1376)")
-    g.add_argument("--cfg", type=float, help="prompt adherence 1-7 (default 2); higher = closer to prompt")
-    g.add_argument("--temperature", type=float, help="0-1 (default 0.3)")
-    g.add_argument("--model", help="rarely needed; only allowed value is gpt-4.1")
+    g.add_argument("--width", type=int, help="512-2048 (default 1024)")
+    g.add_argument("--height", type=int, help="512-2048 (default 1024)")
+    g.add_argument("--batch-size", type=int, default=1,
+                   help="1-4 picks from the SAME prompt (default 1)")
     g.add_argument("--seed", type=int)
-    g.add_argument("--callback-url")
     g.add_argument("--priority", choices=["default", "urgent"])
-    g.add_argument("--out", help="output png path")
+    g.add_argument("--out", help="output png path (batch: suffix _1.._N added)")
     g.add_argument("--no-wait", action="store_true", help="return after queueing, don't poll")
     g.add_argument("--poll-interval", type=int, default=5)
     g.add_argument("--timeout", type=int, default=900)

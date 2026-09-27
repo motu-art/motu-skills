@@ -102,6 +102,47 @@
         "cleanup",
         "restoration"
       ]
+    },
+    {
+      "name": "motu-qwen-image2-1",
+      "source": "./motu-qwen-image2.1",
+      "description": "Generate images through the motu.art Qwen Image 2.1 workflow API — strongest on-image Chinese and English text rendering, native 512-2048 canvases, intent-matched prose prompt templates, and multi-image series with character consistency.",
+      "author": {
+        "name": "Motu"
+      },
+      "homepage": "https://api.motu.art",
+      "repository": "https://github.com/motu-art/motu-skills",
+      "license": "MIT",
+      "keywords": [
+        "image",
+        "image-generation",
+        "text-to-image",
+        "chinese-text",
+        "typography",
+        "qwen",
+        "prompt-templates",
+        "series"
+      ]
+    },
+    {
+      "name": "motu-z-image",
+      "source": "./motu-z-image",
+      "description": "Generate high-quality 2K images through the motu.art Z-Image Turbo workflow API — intent-matched prompt templates, per-image prompt design and verification, multi-image series with character consistency.",
+      "author": {
+        "name": "Motu"
+      },
+      "homepage": "https://api.motu.art",
+      "repository": "https://github.com/motu-art/motu-skills",
+      "license": "MIT",
+      "keywords": [
+        "image",
+        "image-generation",
+        "text-to-image",
+        "2k",
+        "z-image",
+        "prompt-templates",
+        "series"
+      ]
     }
   ]
 }

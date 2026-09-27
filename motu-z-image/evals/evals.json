@@ -1,0 +1,53 @@
+{
+  "skill_name": "motu-z-image",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我生成一张高级感的美妆人像：25 岁左右东亚女性，清透裸妆配正红唇，自然窗光影棚，竖版 2K。保存到当前工作目录下。",
+      "expected_output": "一张竖版 png（portrait preset，768x1024 画布 → 约 1536x2048 成图），prompt 为 Z-Image 结构化逗号分组格式（title: 开头，含主体/姿势/相机/灯光/调色字段组），基于 portrait 模板填充并经八维度校验后提交",
+      "files": [],
+      "assertions": [
+        {"id": "png_exists", "text": "outputs/ 下存在有效的 PNG 图片文件"},
+        {"id": "portrait_ratio", "text": "图片为竖版 (height > width)，且约为画布的 2 倍分辨率"},
+        {"id": "structured_prompt", "text": "prompt 以 title: 开头，按字段组顺序组织（主体→相机→灯光→调色），而非一句话描述"},
+        {"id": "lighting_specified", "text": "prompt 包含 position:/intensity:/ratio: 形式的灯光属性"},
+        {"id": "pre_submit_check", "text": "提交前对 prompt 做了八维度自检（Subject/Identity/Action/Environment/Composition/Lighting/Style/Constraint）"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "给我们的钛合金机械表拍 3 张不同角度的商业产品图，再出一张深色工业风场景图，一共 4 张。",
+      "expected_output": "4 张 png，每张独立设计并校验 prompt（产品图套 product 模板含结构清单，场景图套 scene/automotive 模板），逐张提交，各有独立命名",
+      "files": [],
+      "assertions": [
+        {"id": "four_pngs", "text": "生成 4 张不同的 PNG 图片文件，各自独立命名"},
+        {"id": "per_image_prompts", "text": "4 条 prompt 各自完整设计（视角/景别/灯光互不相同），不是同一 prompt 复制微调"},
+        {"id": "structure_locked", "text": "产品 prompt 中包含必须准确保留的结构清单（表冠/表盘/链带等具体部件）"},
+        {"id": "paths_reported", "text": "向用户报告了各图片的本地路径与实际分辨率"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "设计一个卡通森林向导 mascot：10 岁左右女孩，薄荷绿短发配标志性大圆护目镜，要 3 张 —— 全身正面设定图、雨中撑伞的场景图、以及头像特写。角色要保持一致。",
+      "expected_output": "3 张 png，先确认 MASTER 角色固定块（外观/服装/标志物逐字一致），再逐张只改场景/动作/景别：character 模板（全身设定图）+ people-scene 模板（雨中场景）+ portrait/character 特写",
+      "files": [],
+      "assertions": [
+        {"id": "three_pngs", "text": "生成 3 张 PNG 图片文件"},
+        {"id": "master_block", "text": "3 条 prompt 中角色固定块（发型/服装/护目镜等）逐字一致，只有场景/动作/景别变化"},
+        {"id": "templates_matched", "text": "3 张分别匹配了 character / people-scene / 特写类模板"},
+        {"id": "consistency_negative", "text": "prompt 含角色一致性约束与 no extra fingers/no deformed hands 等负面词"}
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "这张咖啡杯图不错，同一个 prompt 再给我出 3 张备选挑一张。",
+      "expected_output": "一次 batch_size=3 的提交（同一 prompt 的 3 个备选），下载为 name_1/2/3.png",
+      "files": [],
+      "assertions": [
+        {"id": "batch_used", "text": "请求使用 batch_size=3（而非 3 次独立提交）"},
+        {"id": "three_downloads", "text": "下载 3 个结果文件（后缀 _1/_2/_3）"},
+        {"id": "same_prompt", "text": "3 个结果来自同一条 prompt（同一次提交的 result 数组含 3 个文件）"}
+      ]
+    }
+  ]
+}

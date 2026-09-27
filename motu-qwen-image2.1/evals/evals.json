@@ -1,0 +1,54 @@
+{
+  "skill_name": "motu-qwen-image2-1",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我做一张中文茶饮海报：主标题「秋日茶集」，副标题「手作 · 限定 · 每日鲜泡」，暖米色配墨绿，竖版。保存到当前工作目录下。",
+      "expected_output": "一张竖版 png（portrait preset 1024x1536，输出与画布同尺寸），prompt 为 Qwen 英文散文格式（一整段流畅句序，非逗号字段组），主副标题逐字引号引用 + 位置 + 字体气质，负面句排除其余文字，基于 poster 模板填充并经八维度校验后提交",
+      "files": [],
+      "assertions": [
+        {"id": "png_exists", "text": "存在有效的 PNG 图片文件"},
+        {"id": "portrait_size", "text": "图片为竖版 1024x1536（输出严格等于请求画布）"},
+        {"id": "prose_prompt", "text": "prompt 为流畅英文散文段落（完整句子按固定句序组织），而非 title: 开头的逗号字段组"},
+        {"id": "text_quoted", "text": "「秋日茶集」与「手作 · 限定 · 每日鲜泡」逐字出现在双引号内，并写明位置与字体气质"},
+        {"id": "negative_closer", "text": "prompt 以 Absolutely no … 收尾且排除了 other text（画面有指定文字时排除其余文字）"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "给我们的钛合金机械表拍 3 张不同角度的商业产品图，再出一张深色工业风场景图，一共 4 张，其中场景图要 2K 细节。",
+      "expected_output": "4 张 png，每张独立设计并校验 prompt（产品图套 product 模板含结构清单，场景图套 scene/automotive 模板且用 2k preset），逐张提交，各有独立命名",
+      "files": [],
+      "assertions": [
+        {"id": "four_pngs", "text": "生成 4 张不同的 PNG 图片文件，各自独立命名"},
+        {"id": "per_image_prompts", "text": "4 条 prompt 各自完整设计（视角/景别/灯光互不相同），不是同一 prompt 复制微调"},
+        {"id": "structure_locked", "text": "产品 prompt 中包含必须准确保留的结构清单（表冠/表盘/链带等具体部件）"},
+        {"id": "native_2k", "text": "场景图使用 2k 类 preset（如 landscape-2k 2048x1536），输出严格等于请求尺寸"},
+        {"id": "paths_reported", "text": "向用户报告了各图片的本地路径与实际分辨率"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "设计一个卡通森林向导 mascot：10 岁左右女孩，薄荷绿短发配标志性大圆护目镜，要 3 张 —— 全身正面设定图、雨中撑伞的场景图、以及头像特写。角色要保持一致。",
+      "expected_output": "3 张 png，先确认 MASTER 角色固定句组（外观/服装/标志物逐字一致的英文句子），再逐张只改场景/动作/景别：character 模板（全身设定图）+ people-scene 模板（雨中场景）+ portrait/character 特写",
+      "files": [],
+      "assertions": [
+        {"id": "three_pngs", "text": "生成 3 张 PNG 图片文件"},
+        {"id": "master_block", "text": "3 条 prompt 中角色固定句组（发型/服装/护目镜等描述）逐字一致，只有场景/动作/景别句变化"},
+        {"id": "templates_matched", "text": "3 张分别匹配了 character / people-scene / 特写类模板"},
+        {"id": "consistency_negative", "text": "prompt 含角色一致性要求与 no extra fingers/no deformed hands 等负面收尾"}
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "这张咖啡杯图不错，同一个 prompt 再给我出 3 张备选挑一张。",
+      "expected_output": "一次 batch_size=3 的提交（同一 prompt 的 3 个备选），下载为 name_1/2/3.png",
+      "files": [],
+      "assertions": [
+        {"id": "batch_used", "text": "请求使用 batch_size=3（而非 3 次独立提交）"},
+        {"id": "three_downloads", "text": "下载 3 个结果文件（后缀 _1/_2/_3）"},
+        {"id": "same_prompt", "text": "3 个结果来自同一条 prompt（同一次提交的 result 数组含 3 个文件）"}
+      ]
+    }
+  ]
+}
