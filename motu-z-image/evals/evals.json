@@ -29,7 +29,7 @@
     {
       "id": 3,
       "prompt": "设计一个卡通森林向导 mascot：10 岁左右女孩，薄荷绿短发配标志性大圆护目镜，要 3 张 —— 全身正面设定图、雨中撑伞的场景图、以及头像特写。角色要保持一致。",
-      "expected_output": "3 张 png，先确认 MASTER 角色固定块（外观/服装/标志物逐字一致），再逐张只改场景/动作/景别：character 模板（全身设定图）+ people-scene 模板（雨中场景）+ portrait/character 特写",
+      "expected_output": "3 张 png，自行设计 MASTER 角色固定块（外观/服装/标志物逐字一致，不请求用户确认），再逐张只改场景/动作/景别：character 模板（全身设定图）+ people-scene 模板（雨中场景）+ portrait/character 特写",
       "files": [],
       "assertions": [
         {"id": "three_pngs", "text": "生成 3 张 PNG 图片文件"},
@@ -47,6 +47,18 @@
         {"id": "batch_used", "text": "请求使用 batch_size=3（而非 3 次独立提交）"},
         {"id": "three_downloads", "text": "下载 3 个结果文件（后缀 _1/_2/_3）"},
         {"id": "same_prompt", "text": "3 个结果来自同一条 prompt（同一次提交的 result 数组含 3 个文件）"}
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "自动给我出一套户外露营品牌 lookbook 的 3 张图：山野清晨场景图、帐篷产品图、人物穿搭图。全程不用问我，直接出图。",
+      "expected_output": "3 张 png，零确认自主流程：判意图（scene/landscape + product + fashion 人物）→ 对应模板 → 自行补全未指定字段 → prompt_check.py 机械 lint 通过 + 八维度自检 → 逐张自动提交，最后报告完整 prompt 与设计假设",
+      "files": [],
+      "assertions": [
+        {"id": "no_user_confirmation", "text": "全程未向用户提问或等待确认（意图识别、模板选择、字段补全、提交均自主完成）"},
+        {"id": "lint_used", "text": "每条 prompt 提交前运行了 scripts/prompt_check.py 机械校验，0 errors 才提交"},
+        {"id": "per_image_prompts", "text": "3 条 prompt 各自按对应意图模板独立设计（场景/产品/穿搭字段组互不相同）"},
+        {"id": "final_prompts_reported", "text": "最终报告给出每张的完整 prompt 与设计假设（哪些未指定字段是自行补全的，如光线/机位/调色）"}
       ]
     }
   ]

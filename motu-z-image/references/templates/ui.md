@@ -6,7 +6,7 @@
 
 ## 填充清单
 
-| 字段 | 必答 |
+| 字段 | 设计要点 |
 |---|---|
 | 任务 | Web / App / Desktop 哪种 |
 | 产品与页面 | 名称 + Dashboard/Chat/Editor/Settings |

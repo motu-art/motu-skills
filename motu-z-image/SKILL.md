@@ -15,28 +15,39 @@ prompts** — the model follows a well-ordered field list (subject → pose → 
 → grading) much more faithfully than a loose sentence, which is what makes
 "生成结果最大程度符合意图" achievable.
 
-## Workflow: 意图 → 模板 → 校验 → 逐张提交
+## Workflow: 意图 → 模板 → 填充 → 自审 → 自动提交
 
-Every request — single image or set — follows the same four steps:
+Every request — single image or set — follows the same four steps, **fully
+autonomously (零确认)**: once the user submits a task, never pause to confirm
+anything — identify, design, self-review, submit, then report with the final
+prompts and the design assumptions made. Only ask the user when a blocking gap
+**cannot** be designed around (a legally required real brand name / a user-owned
+asset that wasn't provided, or self-contradictory requirements) — and even then
+prefer finishing what can be done under the most reasonable assumption and
+flagging it in the report over waiting mid-flow. The template checklists are
+design guidance for the skill itself, never a questionnaire for the user.
 
 1. **判意图** — identify the generation intent from the user's request, then read the
    matching template in `references/templates/` (routing table:
-   `references/templates/index.md`; 17 intents: character, portrait, people-scene,
-   product, ecommerce, food, automotive, scene, architecture, poster, hero-image, social,
-   logo, ui, infographic, comic, series). A brief mixing intents
+   `references/templates/index.md`; 24 intents: character, portrait, people-scene,
+   product, ecommerce, food, automotive, jewelry, fashion, animal, landscape, scene,
+   architecture, poster, bookcover, hero-image, social, logo, ui, infographic, comic,
+   illustration, mockup, series). A brief mixing intents
    (「一套 3 张：产品图 + 场景图 + 海报」) splits into one task per image.
 2. **选模板** — the template file gives the fill-in checklist, the Z-Image prompt
-   skeleton, and a complete worked example.
+   skeleton, and a complete worked example. Pull concrete vocabulary (lighting,
+   camera, style, color, material) from `references/vocabulary.md`.
 3. **填充** — fill the user's specifics into the skeleton. Fields the user didn't
    specify get designed deliberately (template defaults) — never left empty; an empty
    field is the model improvising.
-4. **校验后提交** — run the eight-dimension check
-   (Subject / Identity / Action / Environment / Composition / Lighting / Style /
-   Constraint — table in `references/prompting.md`), confirm the canvas matches the
-   destination, quoted text is exact, ≤ 6000 chars — then submit. For a multi-image
-   job, show the user the per-image prompt list (titles + one line each) for
-   confirmation unless they asked to proceed autonomously, and **repeat these steps
-   image by image** — each image gets its own designed-and-verified prompt.
+4. **自审后自动提交** — mechanical lint first: write the prompt to a file and run
+   `python3 scripts/prompt_check.py --prompt-file p.txt` (errors → fix → re-lint),
+   then the eight-dimension check (Subject / Identity / Action / Environment /
+   Composition / Lighting / Style / Constraint — table in
+   `references/prompting.md`), confirm the canvas matches the destination and
+   quoted text is exact — then **submit immediately, no confirmation round-trip**.
+   For a multi-image job, **repeat these steps image by image** — each image gets
+   its own designed-and-verified prompt, submitted as it passes review.
 
 ## Quick start
 
@@ -104,8 +115,9 @@ than writing from zero.
   `--out` name (`outputs/look_01.png`, `outputs/look_02.png`, …).
 - **一致性（套图）**：when a character/product/style must hold across images, write a
   MASTER block (identity, outfit, props, style, palette — verbatim in every prompt) and
-  vary only scene/action/shot per image — `references/templates/series.md`. The MASTER
-  block is worth confirming with the user before generating the whole set.
+  vary only scene/action/shot per image — `references/templates/series.md`. Design the
+  MASTER block yourself (no confirmation pause); show it with its rationale in the
+  final report so the user can request a redo if desired.
 - **`--batch-size` is not 逐张**: it produces picks from one identical prompt — use it
   only for 「同一张再给我几张备选」.
 

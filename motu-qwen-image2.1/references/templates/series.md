@@ -30,8 +30,9 @@ In this scene, [action: observable behavior], [expression], in [scene: place and
 
 ## 工作流（逐张 = 逐张设计、逐张校验、逐张提交）
 
-1. **先写 MASTER 块**并请用户确认（这是套图的「选角」环节，改一次成本 = 重出
-   全套）。
+1. **自行设计 MASTER 块**（套图的「选角」环节，改一次成本 = 重出全套）——
+   不请求用户确认，按需求最合理解读直接锁定，并在最终报告里展示 MASTER 块
+   内容与设计依据，便于用户事后调整重出。
 2. **列分镜清单**：每张一行 —— 编号、意图模板、场景/动作/景别一句话。混合意图
    （产品图 + 场景图 + 海报）每张标各自模板。
 3. **逐张组装 prompt**：MASTER 块（原样复制）+ 变量句 + 该意图模板的光线/构图/
@@ -47,9 +48,9 @@ In this scene, [action: observable behavior], [expression], in [scene: place and
   `suddenly in darkness`。
 - 4 张以上的组，每张文件名编号（look_01 …），报告更好读。
 
-## 示例
+## 示例素材：MASTER 块 + 变量句
 
-MASTER 块（角色套图）：
+MASTER 块（角色套图，逐句原样复制进每张 prompt）：
 
 ```text
 The subject is a young street photographer, a woman in her mid-twenties, East Asian.
@@ -61,14 +62,28 @@ The palette holds dusty pink, cream and washed denim blue.
 These details remain identical in every image of the set.
 ```
 
-SCENE 01（晨间咖啡店，中景）追加变量句：
+SCENE 01（晨间咖啡店，中景）变量句：she sits by a large window in a sunlit
+specialty coffee shop at eight in the morning, holding the camera up to her eye
+with both hands with a focused calm expression, medium shot at eye level, soft
+morning window light from camera left。
+
+SCENE 02（黄昏街道，全景）变量句：she walks down a quiet tree-lined street at
+golden hour, the camera resting against her chest and a relaxed smile looking
+off-frame, wide shot at eye level, warm low sunset backlight from camera right。
+
+## 示例（完整可直接提交）
+
+MASTER 句组 + 变量句 + portrait 模板的光线/构图/负面句，折叠组装成的完整
+散文 prompt（两条间 MASTER 句一字不改）：
+
+SCENE 01 组装完成：
 
 ```text
-In this scene, she sits by a large window in a morning cafe, holding the camera up to her eye with both hands with a focused calm expression, in a sunlit specialty coffee shop at eight in the morning, medium shot at eye level, soft morning window light from camera left.
+A warm editorial lifestyle photograph of a young street photographer in a morning cafe. The subject is a young street photographer, a woman in her mid-twenties, East Asian, with an oval face and soft features, straight black hair cut just below the shoulders with a small silver star hairpin on the left, light olive skin, and a slim relaxed build. She wears an oversized dusty-pink knit cardigan over a white tee, wide dark denim trousers and cream canvas sneakers, with a small canvas tote on her shoulder, and a compact film camera hangs from a strap around her neck. In this scene she sits by a large window in a sunlit specialty coffee shop at eight in the morning, holding the camera up to her eye with both hands with a focused calm expression, a wooden table with a ceramic latte cup and an open notebook in the softly blurred foreground. Medium shot at eye level, vertical framing with the subject centered and gentle headroom, a 50mm lens at f/2.0 giving shallow depth of field. Soft morning window light enters from camera left through a sheer white curtain, gentle and even across her face, with a subtle pale rim on her hair for separation. Warm editorial lifestyle photography with delicate film grain and soft contrast, the palette holding dusty pink, cream and washed denim blue. She loses herself in the frame while the city wakes quietly outside. Absolutely no text, no watermark, no extra fingers, no deformed hands, pure imagery only.
 ```
 
-SCENE 02（黄昏街道，全景）追加变量句：
+SCENE 02 组装完成：
 
 ```text
-In this scene, she walks down a quiet tree-lined street at dusk, the camera resting against her chest and a relaxed smile looking off-frame, on a residential street at golden hour, wide shot at eye level, warm low sunset backlight from camera right.
+A warm editorial lifestyle photograph of the same young street photographer walking home at dusk. The subject is a young street photographer, a woman in her mid-twenties, East Asian, with an oval face and soft features, straight black hair cut just below the shoulders with a small silver star hairpin on the left, light olive skin, and a slim relaxed build. She wears an oversized dusty-pink knit cardigan over a white tee, wide dark denim trousers and cream canvas sneakers, with a small canvas tote on her shoulder, and a compact film camera hangs from a strap around her neck. In this scene she walks down a quiet tree-lined residential street at golden hour, the camera resting against her chest and a relaxed smile on her face as she looks off-frame, parked bicycles and glowing shop windows fading softly into the distance. Wide shot at eye level, vertical framing with her on the right third and the street leading away to the left, a 35mm lens at f/2.8 with moderate depth of field. Warm low sunset backlight comes from behind camera right, natural haze softening the rim of her hair, while a gentle fill lifts her face out of shadow. Warm editorial lifestyle photography with delicate film grain and soft contrast, the palette holding dusty pink, cream and washed denim blue. She drifts home unhurried as the streetlights come on. Absolutely no text, no watermark, no extra fingers, no deformed hands, pure imagery only.
 ```
