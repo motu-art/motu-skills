@@ -1,22 +1,24 @@
 ---
 name: motu-qwen-image2-1
-description: Generate images through the motu.art Qwen Image 2.1 workflow API (api.motu.art, workflow image_qwen_image_2_1_t2i) — strongest-in-class on-image Chinese and English text rendering plus native 512–2048 canvases, for posters, packaging, signage, UI concepts, e-commerce images, portraits, product shots, scenes, characters, and multi-image series. Use this skill whenever the user asks to 生成图片/画图/画一张/生成一张图/做图/做海报/做封面/生成带文字的图/中文文字海报/招牌/包装文字/菜单图/UI 界面图/横幅图/套图/系列图/一组图, generate an image whose main point is rendered text (headline, wordmark, label, UI copy), a high-resolution 2048-class picture, or a set of related images — or mentions motu/Qwen image generation — even if they don't name the API. Distinctive workflow: match the request to an intent template, design and verify a full English prose prompt per image (one at a time), then submit. For text-free images where speed matters prefer motu-z-image; for pure Latin-letterform logo design prefer motu-ideogram4.
+description: Generate and edit images through the motu.art Qwen Image 2.1 workflow API (api.motu.art, workflows image_qwen_image_2_1_t2i / image_qwen_image_2_1_image_edit) — strongest-in-class on-image Chinese and English text rendering plus native 512–2048 canvases, for posters, packaging, signage, UI concepts, e-commerce images, portraits, product shots, scenes, characters, and multi-image series, plus reference-image editing with 1–8 input images (换装/换背景/风格迁移/多图合成/局部修改). Use this skill whenever the user asks to 生成图片/画图/画一张/生成一张图/做图/做海报/做封面/生成带文字的图/中文文字海报/招牌/包装文字/菜单图/UI 界面图/横幅图/套图/系列图/一组图, 改图/编辑图片/把这张图…/参考这张图/换上/抠图换背景/保持人物不变, generate an image whose main point is rendered text (headline, wordmark, label, UI copy), edit or restyle an existing image, a high-resolution 2048-class picture, or a set of related images — or mentions motu/Qwen image generation — even if they don't name the API. Distinctive workflow: match the request to an intent template, design and verify a full English prose prompt per image (one at a time), then submit. For text-free images where speed matters prefer motu-z-image.
 ---
 
 # motu-qwen-image2-1
 
-Generate images with the motu.art workflow API (Qwen Image 2.1 model).
-One workflow, one script: `scripts/motu_qwen_image.py` (stdlib-only Python 3, no
-dependencies).
+Generate and edit images with the motu.art workflow API (Qwen Image 2.1 model).
+Two workflows, one script: `scripts/motu_qwen_image.py` (stdlib-only Python 3;
+reference-image compression uses macOS `sips`).
 
 Qwen Image 2.1's strengths: **the strongest on-image Chinese + English text
 rendering** among the motu image skills (live-verified: a Chinese headline + spaced
 subline rendered character-perfect, including interpuncts) — text-bearing posters,
 packaging, signage, UI copy belong here; **native 512–2048 canvases** returned at
-exactly the requested resolution (2048-class detail without an upscaler); and strong
-response to **natural-language English prose prompts** — one flowing paragraph of
-ordered facts (subject → action → environment → light → camera → style → negative
-closer) beats a tag list, which is what makes "生成结果最大程度符合意图" achievable.
+exactly the requested resolution (2048-class detail without an upscaler); **multi-
+reference editing** (1–8 images, `image_qwen_image_2_1_image_edit`) for 换装/换背
+景/风格迁移/多图合成/局部修改 with identity preserved; and strong response to
+**natural-language English prose prompts** — one flowing paragraph of ordered facts
+(subject → action → environment → light → camera → style → negative closer) beats
+a tag list, which is what makes "生成结果最大程度符合意图" achievable.
 Generation typically takes ~30 s (queue spikes to ~10 min happen; script waits up to
 15 min by default).
 
@@ -32,7 +34,9 @@ prefer finishing what can be done under the most reasonable assumption and
 flagging it in the report over waiting mid-flow. The template checklists are
 design guidance for the skill itself, never a questionnaire for the user.
 
-1. **判意图** — identify the generation intent from the user's request, then read the
+1. **判意图** — identify the generation intent from the user's request: if they
+   provided existing image(s) to modify （改图/换装/换背景/参考图合成）, it's an
+   **edit** task — go to the 参考图编辑 section below; otherwise read the
    matching template in `references/templates/` (routing table:
    `references/templates/index.md`; 24 intents: character, portrait, people-scene,
    product, ecommerce, food, automotive, jewelry, fashion, animal, landscape, scene,
@@ -78,6 +82,33 @@ Useful flags: `--dry-run` (print the request without spending quota), `--no-wait
 `--seed N`, `--priority urgent`, `--timeout`. Check a running job with
 `python3 scripts/motu_qwen_image.py status --request-id <uuid>`.
 
+## 参考图编辑（edit）
+
+When the user provides existing image(s) to transform — 换装、换背景、风格迁移、
+多图合成、保持人物/产品不变的局部修改 — use the `edit` subcommand (workflow
+`image_qwen_image_2_1_image_edit`, 1–8 reference images):
+
+```bash
+python3 scripts/motu_qwen_image.py edit \
+  --image person.png --image shirt.png \
+  --prompt 'Keep the character and pose in <image1> unchanged, put the light blue denim shirt from <image2> on the character, preserve the original facial features, hair, body shape and pose, the shirt fits naturally, realistic fabric texture, keep the original background and lighting. Absolutely no text, no watermark.' \
+  --size portrait --out outputs/edited.png
+```
+
+- `--image` is repeatable; **order maps to `<image1>`…`<image8>`** in the prompt.
+  Always reference each image explicitly by that tag — say what to keep from one
+  image and what to take from another (the API's own default prompt is exactly this
+  pattern; see `references/api.md`).
+- Local files are **compressed automatically before upload**: the edit canvas tops
+  out at 2048px, so the long edge is capped at 2048 (proportional, downscale-only)
+  and anything still over 10 MB is re-encoded JPEG q85 — submit the best size, not
+  the biggest file. http(s) URLs pass through untouched. base64 data URIs are never
+  used (they fail silently in processing); locals always go through the OSS presign
+  route.
+- Everything else (canvas presets, batch, seed, polling, download) is identical to
+  `generate`. The output canvas is independent of the input image sizes — pick
+  `--size`/`--width/--height` for the destination, not the source.
+
 ## Parameters
 
 | Parameter | CLI flag | Default | Limits |
@@ -86,6 +117,7 @@ Useful flags: `--dry-run` (print the request without spending quota), `--no-wait
 | `width` / `height` | `--width` / `--height` or `--size` | 1024 × 1024 (square) | 512–2048 each side; **output is exactly the requested size** |
 | `batch_size` | `--batch-size` | 1 | 1–4 picks from the **same** prompt |
 | `seed` | `--seed` | 0 (random) | 0–10000000000000000 |
+| `image1`…`image8` | `--image` (edit only, repeatable) | — | 1–8 reference images; locals auto-compressed (≤2048 long edge, ≤10 MB) then OSS-uploaded |
 
 Size presets: `square` 1024×1024 · `portrait` 1024×1536 (2:3) · `landscape` 1536×1024 ·
 `story` 1152×2048 (9:16) · `banner` 2048×1152 (16:9) · `square-2k` 2048×2048 ·
@@ -144,8 +176,8 @@ than writing from zero.
   for variety. Regenerate only the missed image — the others are unaffected.
 - Generated images work directly as inputs to sibling skills: `motu-video-minimax-h3`
   (i2v / r2v frames) and `motu-remove-watermark`.
-- Text-bearing images are this skill's home turf (Chinese included). Pure Latin
-  letterform logo design: `motu-ideogram4`. Fast text-free 2K: `motu-z-image`.
+- Text-bearing images are this skill's home turf (Chinese included).
+  Fast text-free 2K: `motu-z-image`.
 
 ## Troubleshooting
 
@@ -154,9 +186,12 @@ than writing from zero.
 - `401/403` → `MOTU_KEY` missing or invalid; confirm `source .envrc` ran.
 - Everything is async: a successful submit returns `202` with only a
   `workflow_request_id`; results arrive via polling (script default timeout 15 min —
-  long queue spikes do happen; `--status` re-checks, `--timeout` extends).
+  long queue spikes do happen; the `status` subcommand re-checks, `--timeout` extends).
 - `504` from nginx on submit → gateway congestion, not a bad request; retry the same
   payload after a short wait.
 - A job that ends `failed` returns no error detail from any endpoint. Retry once with
-  defaults before changing parameters.
+  defaults before changing parameters. **Exception**: `image_edit` was live-verified
+  failing for every payload shape on 2026-09-28 (backend outage, t2i unaffected —
+  see `references/api.md`); if edit jobs keep failing, treat it as a platform issue
+  (wait/report), don't keep tweaking the request.
 - Full endpoint/response/auth details: `references/api.md`.

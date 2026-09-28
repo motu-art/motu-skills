@@ -1,8 +1,7 @@
 # Logo / 品牌视觉 — logo
 
 **何时用**：品牌 Logo、icon、标志、品牌字标。要求几何极简、小尺寸可用。
-**双语 wordmark（品牌名含中文）是本 skill 的优势场景**；纯拉丁字母的字形
-打磨 motu-ideogram4 更专。
+**双语 wordmark（品牌名含中文）是本 skill 的优势场景**。
 
 ## 填充清单
 

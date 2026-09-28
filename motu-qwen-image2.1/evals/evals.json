@@ -7,11 +7,26 @@
       "expected_output": "一张竖版 png（portrait preset 1024x1536，输出与画布同尺寸），prompt 为 Qwen 英文散文格式（一整段流畅句序，非逗号字段组），主副标题逐字引号引用 + 位置 + 字体气质，负面句排除其余文字，基于 poster 模板填充并经八维度校验后提交",
       "files": [],
       "assertions": [
-        {"id": "png_exists", "text": "存在有效的 PNG 图片文件"},
-        {"id": "portrait_size", "text": "图片为竖版 1024x1536（输出严格等于请求画布）"},
-        {"id": "prose_prompt", "text": "prompt 为流畅英文散文段落（完整句子按固定句序组织），而非 title: 开头的逗号字段组"},
-        {"id": "text_quoted", "text": "「秋日茶集」与「手作 · 限定 · 每日鲜泡」逐字出现在双引号内，并写明位置与字体气质"},
-        {"id": "negative_closer", "text": "prompt 以 Absolutely no … 收尾且排除了 other text（画面有指定文字时排除其余文字）"}
+        {
+          "id": "png_exists",
+          "text": "存在有效的 PNG 图片文件"
+        },
+        {
+          "id": "portrait_size",
+          "text": "图片为竖版 1024x1536（输出严格等于请求画布）"
+        },
+        {
+          "id": "prose_prompt",
+          "text": "prompt 为流畅英文散文段落（完整句子按固定句序组织），而非 title: 开头的逗号字段组"
+        },
+        {
+          "id": "text_quoted",
+          "text": "「秋日茶集」与「手作 · 限定 · 每日鲜泡」逐字出现在双引号内，并写明位置与字体气质"
+        },
+        {
+          "id": "negative_closer",
+          "text": "prompt 以 Absolutely no … 收尾且排除了 other text（画面有指定文字时排除其余文字）"
+        }
       ]
     },
     {
@@ -20,11 +35,26 @@
       "expected_output": "4 张 png，每张独立设计并校验 prompt（产品图套 product 模板含结构清单，场景图套 scene/automotive 模板且用 2k preset），逐张提交，各有独立命名",
       "files": [],
       "assertions": [
-        {"id": "four_pngs", "text": "生成 4 张不同的 PNG 图片文件，各自独立命名"},
-        {"id": "per_image_prompts", "text": "4 条 prompt 各自完整设计（视角/景别/灯光互不相同），不是同一 prompt 复制微调"},
-        {"id": "structure_locked", "text": "产品 prompt 中包含必须准确保留的结构清单（表冠/表盘/链带等具体部件）"},
-        {"id": "native_2k", "text": "场景图使用 2k 类 preset（如 landscape-2k 2048x1536），输出严格等于请求尺寸"},
-        {"id": "paths_reported", "text": "向用户报告了各图片的本地路径与实际分辨率"}
+        {
+          "id": "four_pngs",
+          "text": "生成 4 张不同的 PNG 图片文件，各自独立命名"
+        },
+        {
+          "id": "per_image_prompts",
+          "text": "4 条 prompt 各自完整设计（视角/景别/灯光互不相同），不是同一 prompt 复制微调"
+        },
+        {
+          "id": "structure_locked",
+          "text": "产品 prompt 中包含必须准确保留的结构清单（表冠/表盘/链带等具体部件）"
+        },
+        {
+          "id": "native_2k",
+          "text": "场景图使用 2k 类 preset（如 landscape-2k 2048x1536），输出严格等于请求尺寸"
+        },
+        {
+          "id": "paths_reported",
+          "text": "向用户报告了各图片的本地路径与实际分辨率"
+        }
       ]
     },
     {
@@ -33,10 +63,22 @@
       "expected_output": "3 张 png，自行设计 MASTER 角色固定句组（外观/服装/标志物逐字一致的英文句子，不请求用户确认），再逐张只改场景/动作/景别：character 模板（全身设定图）+ people-scene 模板（雨中场景）+ portrait/character 特写",
       "files": [],
       "assertions": [
-        {"id": "three_pngs", "text": "生成 3 张 PNG 图片文件"},
-        {"id": "master_block", "text": "3 条 prompt 中角色固定句组（发型/服装/护目镜等描述）逐字一致，只有场景/动作/景别句变化"},
-        {"id": "templates_matched", "text": "3 张分别匹配了 character / people-scene / 特写类模板"},
-        {"id": "consistency_negative", "text": "prompt 含角色一致性要求与 no extra fingers/no deformed hands 等负面收尾"}
+        {
+          "id": "three_pngs",
+          "text": "生成 3 张 PNG 图片文件"
+        },
+        {
+          "id": "master_block",
+          "text": "3 条 prompt 中角色固定句组（发型/服装/护目镜等描述）逐字一致，只有场景/动作/景别句变化"
+        },
+        {
+          "id": "templates_matched",
+          "text": "3 张分别匹配了 character / people-scene / 特写类模板"
+        },
+        {
+          "id": "consistency_negative",
+          "text": "prompt 含角色一致性要求与 no extra fingers/no deformed hands 等负面收尾"
+        }
       ]
     },
     {
@@ -45,9 +87,18 @@
       "expected_output": "一次 batch_size=3 的提交（同一 prompt 的 3 个备选），下载为 name_1/2/3.png",
       "files": [],
       "assertions": [
-        {"id": "batch_used", "text": "请求使用 batch_size=3（而非 3 次独立提交）"},
-        {"id": "three_downloads", "text": "下载 3 个结果文件（后缀 _1/_2/_3）"},
-        {"id": "same_prompt", "text": "3 个结果来自同一条 prompt（同一次提交的 result 数组含 3 个文件）"}
+        {
+          "id": "batch_used",
+          "text": "请求使用 batch_size=3（而非 3 次独立提交）"
+        },
+        {
+          "id": "three_downloads",
+          "text": "下载 3 个结果文件（后缀 _1/_2/_3）"
+        },
+        {
+          "id": "same_prompt",
+          "text": "3 个结果来自同一条 prompt（同一次提交的 result 数组含 3 个文件）"
+        }
       ]
     },
     {
@@ -56,11 +107,54 @@
       "expected_output": "3 张 png，零确认自主流程：判意图（poster 中文文字 → qwen 主场 + food/product + scene）→ 对应模板 → 自行补全未指定字段 → prompt_check.py 机械 lint 通过 + 八维度自检 → 逐张自动提交，最后报告完整 prompt 与设计假设",
       "files": [],
       "assertions": [
-        {"id": "no_user_confirmation", "text": "全程未向用户提问或等待确认（意图识别、模板选择、字段补全、提交均自主完成）"},
-        {"id": "lint_used", "text": "每条 prompt 提交前运行了 scripts/prompt_check.py 机械校验，0 errors 才提交"},
-        {"id": "chinese_text_rendered", "text": "海报 prompt 中「雾岛咖啡 · 开业」逐字出现在双引号内并写明位置与字体气质"},
-        {"id": "per_image_prompts", "text": "3 条 prompt 各自按对应意图模板独立设计（海报/产品/场景句序内容互不相同）"},
-        {"id": "final_prompts_reported", "text": "最终报告给出每张的完整 prompt 与设计假设（哪些未指定字段是自行补全的，如光线/配色/画幅 preset）"}
+        {
+          "id": "no_user_confirmation",
+          "text": "全程未向用户提问或等待确认（意图识别、模板选择、字段补全、提交均自主完成）"
+        },
+        {
+          "id": "lint_used",
+          "text": "每条 prompt 提交前运行了 scripts/prompt_check.py 机械校验，0 errors 才提交"
+        },
+        {
+          "id": "chinese_text_rendered",
+          "text": "海报 prompt 中「雾岛咖啡 · 开业」逐字出现在双引号内并写明位置与字体气质"
+        },
+        {
+          "id": "per_image_prompts",
+          "text": "3 条 prompt 各自按对应意图模板独立设计（海报/产品/场景句序内容互不相同）"
+        },
+        {
+          "id": "final_prompts_reported",
+          "text": "最终报告给出每张的完整 prompt 与设计假设（哪些未指定字段是自行补全的，如光线/配色/画幅 preset）"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "把这张人像照里的人物换成我另一张图里的那件牛仔衬衫，脸部、姿势和背景都别动，出一张竖版图。",
+      "expected_output": "走 edit 子命令（workflow image_qwen_image_2_1_image_edit）：两张参考图按 --image 顺序映射 <image1>/<image2>，prompt 为英文散文并显式引用 <image1> 保持不变（脸部/姿势/背景）、从 <image2> 取衬衫；本地图先压缩（长边≤2048、>10MB 转 JPEG q85）再经 OSS 上传提交；输出 portrait 竖版 png",
+      "files": [],
+      "assertions": [
+        {
+          "id": "edit_subcommand",
+          "text": "使用 motu_qwen_image.py edit（image_qwen_image_2_1_image_edit），而非重新文生图"
+        },
+        {
+          "id": "image_tags_in_prompt",
+          "text": "prompt 中按顺序用 <image1>/<image2> 显式引用两张参考图，且写明哪张保持什么、从哪张取什么"
+        },
+        {
+          "id": "identity_preserved",
+          "text": "prompt 明确要求保留 <image1> 的面部特征、姿势与背景"
+        },
+        {
+          "id": "compression_applied",
+          "text": "本地参考图上传前经压缩检查：长边超过 2048 的等比缩到 2048，仍超 10MB 的转 JPEG q85（已是小图则原样上传）"
+        },
+        {
+          "id": "portrait_output",
+          "text": "输出为竖版 png（portrait preset 1024x1536），并报告本地路径与实际分辨率"
+        }
       ]
     }
   ]

@@ -1,13 +1,13 @@
-# image_qwen_image_2_1_t2i — Motu Workflow API
+# image_qwen_image_2_1_t2i / image_qwen_image_2_1_image_edit — Motu Workflow API
 
-Qwen Image 2.1 文生图。Base URL `https://api.motu.art`，鉴权
+Qwen Image 2.1 文生图 + 参考图编辑。Base URL `https://api.motu.art`，鉴权
 `Authorization: Bearer $MOTU_KEY`（从仓库 `.envrc` 读，勿硬编码）。
 
 异步模式：提交拿 `workflow_request_id` → 轮询状态直到 `completed` / `failed`
 → `result[]` 里取 OSS 签名 URL 下载。典型生成 ~30 秒；网关拥堵时排队可达
 10 分钟，脚本默认 timeout 900 秒。
 
-## 1. 提交
+## 1. 提交（文生图）
 
 `POST https://api.motu.art/workflows/image_qwen_image_2_1_t2i`
 
@@ -23,6 +23,34 @@ Qwen Image 2.1 文生图。Base URL `https://api.motu.art`，鉴权
 响应 `202`: `{"status":"queued","workflow_request_id":"<uuid>"}`；
 `400` 参数缺失/非法；`401` 未带 key；`403` key 无效；`404` workflow 不存在。
 网关偶发 `504`（nginx 超时）——稍等重试即可，不会重复计费请求。
+
+## 1b. 提交（参考图编辑）
+
+`POST https://api.motu.art/workflows/image_qwen_image_2_1_image_edit`
+
+在 t2i 参数（prompt/width/height/seed/batch_size/priority，默认值相同）之上
+增加 1–8 张参考图：
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| image1 | image | 是 | 主参考图；URL 或 base64 data 字符串 |
+| image2 … image8 | image | 否 | 追加参考图，共至多 8 张 |
+
+prompt 中用 `<image1>`、`<image2>`… 按顺序引用各图（官方默认 prompt 即如此：
+"Keep the character and pose in \<image1\> unchanged, put this light blue denim
+shirt from \<image2\> on the character, …"）——换装、换背景、风格迁移、多图
+合成、局部修改都走这个写法：先说哪张图保持什么，再说从哪张图取什么。
+
+**本地图片一律先压缩再上传**：编辑画布上限 2048px，超出只是徒增体积——
+脚本把长边压到 ≤2048（macOS `sips`，等比只缩不放大），仍超 10 MB 的转
+JPEG q85，然后走 OSS presign 路由拿 14 天公开 URL 提交（base64 data URI
+在处理链路中会静默失败，勿用）。
+
+⚠️ **实测状态（2026-09-28）**：该 workflow 提交正常（202 入队），但处理数
+分钟后一律返回 `failed` 且无错误详情——单图/多图、OSS URL/base64、有无
+`<imageN>` 标签的组合均失败，同期 t2i 正常。属后端故障；提交前先用
+`--dry-run` 确认 payload，正式跑失败时按「后端故障」处理（稍候重试或反馈
+平台），不要反复改参数。
 
 ## 2. 轮询
 
@@ -65,8 +93,8 @@ workflow 皆如此）——**一律用上面的 query 参数形式**。
 | 需求 | 用 |
 |---|---|
 | 画面里有中文/英文文字（海报标题、包装、招牌、UI 文案） | **本 skill**（Qwen 2.1 文字渲染最强，实测中文标题+副行全对） |
+| 已有图片要改（换装/换背景/风格迁移/多图合成，1–8 张参考图） | **本 skill 的 edit**（`image_qwen_image_2_1_image_edit`） |
 | 2K 高清、最快速度、无文字画面 | motu-z-image（~15s，2× 放大） |
-| 拉丁文字为主的品牌/海报字体设计 | motu-ideogram4 |
 
 ## 官方默认示例（风格样板）
 
