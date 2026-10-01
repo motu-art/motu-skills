@@ -26,9 +26,9 @@
       ]
     },
     {
-      "name": "motu-video-minimax-h3",
-      "source": "./motu-video-minimax-h3",
-      "description": "Generate videos through the motu.art MiniMax Hailuo H3 workflow API — text-to-video, image-to-video, image+audio talking-head lip-sync, start/end-frame, and frames+audio video with structured shot-by-shot prompting.",
+      "name": "motu-minimax-h3",
+      "source": "./motu-minimax-h3",
+      "description": "Generate videos through the motu.art MiniMax Hailuo H3 workflow API — text-to-video, multimodal reference video (animate an image, start/end frames, talking-head lip-sync, up to 2 images + 2 audio tracks), and control-video motion transfer with structured shot-by-shot prompting.",
       "author": {
         "name": "Motu"
       },
@@ -41,6 +41,7 @@
         "image-to-video",
         "lip-sync",
         "talking-head",
+        "motion-control",
         "minimax",
         "hailuo",
         "animation"

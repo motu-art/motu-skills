@@ -1,10 +1,15 @@
 # MiniMax Hailuo 视频 Prompt 编写指南
 
 来源：官方文档 <https://platform.minimaxi.com/docs/guides/video-prompt> 的思路 + motu 平台
-五个工作流（t2v / i2v / ia2v / r2v / ra2v）的官方示例 prompt。后者是最权威的风格样板，
+三个工作流（t2v / ra2v / controlnet）的官方示例 prompt。后者是最权威的风格样板，
 写 prompt 时优先模仿它们的结构。「五步导演法」（见下）提炼自官方 H3 提示词技能说明的
 社区教程（模式选择 → 三字段结构 → 六要素镜头 → 一致性约束 → 声音分层），已映射到
-motu 的五个工作流。
+motu 的三个工作流。
+
+2026-10 起 API 只剩三个工作流：旧的 i2v / ia2v / r2v 已下线，其场景全部并入 ra2v ——
+一张图 → 只传 `image1`；首尾帧 → `image1` + `image2`；只有尾帧 → 只传 `image2`；
+口播/对口型 → `image1` + `audio1`；最多 2 图 + 2 音频自由组合。controlnet 是新增的
+动作控制工作流（控制视频 `video1` 驱动动作）。
 
 ## 核心原则
 
@@ -26,18 +31,20 @@ H3 是一个集合导演、摄影、演员、录音和配乐于一体的 AI 剧�
 
 ### 第一步：先选任务模式，别一上来就写提示词
 
-判断公式：**没有素材 → 文生视频；有起点 → 首帧；有起点和终点 → 首尾帧；
-只有结果 → 尾帧；需要同时参考角色、动作、风格或声音 → 多模态参考。**
+判断公式：**没有素材 → 文生视频；有参考图 → 参考图生视频；有起点和终点 → 首尾帧；
+只有结果 → 尾帧反推；图+音频要对口型 → 口播；动作必须跟某段视频 → 动作控制。**
 
-映射到 motu 的五个工作流：
+映射到 motu 的三个工作流：
 
 | 你手里有什么 | 模式 | motu 工作流 | prompt 的重点 |
 |---|---|---|---|
 | 只有文字 | 文生视频 | t2v | 自由度高，但人物/服装/场景最容易漂移；适合概念短片、创意测试、空镜氛围镜头 |
-| 一张开场图 | 首帧图生视频 | i2v | 不是重新描写图片，而是：哪些视觉信息必须保持不变 + 接下来发生什么动作（人物转身/抬头/行走、海报动态化、产品展示、漫剧角色开口） |
-| 开头 + 结尾两张图 | 首尾帧生视频 | r2v | 最重要的不是描述两张图，而是把「中间怎么变化」拆成连续动作（站立→拔剑、晴天→暴雨、盒子打开、便服→战甲） |
-| 只有结尾图 | 尾帧生视频 | **ra2v（只传 `--image-end`）** | 反推动作路径，让最终构图精确落到参考图。例：尾帧是碎在地上的茶杯 → 手碰到杯沿→杯子倾斜→滑落桌面→撞击地面→碎片停止移动 |
-| 图 / 视频 / 音频组合参考 | 多模态参考生成 | ra2v（组合图+音频）；口播用 ia2v | 角色图锁人物形象、动作视频约束表演、音频参考控制声音、场景图维持世界观、品牌素材保商品细节 |
+| 一张参考图 | 参考图生视频 | **ra2v（只传 `--image1`）** | 不是重新描写图片，而是：哪些视觉信息必须保持不变 + 接下来发生什么动作（人物转身/抬头/行走、海报动态化、产品展示、漫剧角色开口） |
+| 开头 + 结尾两张图 | 首尾帧生视频 | **ra2v（`--image1` + `--image2`）** | 最重要的不是描述两张图，而是把「中间怎么变化」拆成连续动作（站立→拔剑、晴天→暴雨、盒子打开、便服→战甲） |
+| 只有结尾图 | 尾帧反推 | **ra2v（只传 `--image2`）** | 反推动作路径，让最终构图精确落到参考图。例：尾帧是碎在地上的茶杯 → 手碰到杯沿→杯子倾斜→滑落桌面→撞击地面→碎片停止移动 |
+| 人物图 + 语音音频 | 口播/对口型 | **ra2v（`--image1` + `--audio1`）** | 锁定人物身份与机位，声明音频 1:1 拷贝、口型由音频驱动（见「口播模式规格」） |
+| 一段动作视频（+角色图） | 动作控制/动作迁移 | **controlnet（`--video1`，可选 `--image1`/`--image2`）** | 动作来自控制视频，prompt 只描述新主体、风格与场景，不必复述动作本身 |
+| 多图 + 多音频组合 | 多模态参考 | ra2v（最多 2 图 + 2 音频） | 角色图锁人物形象、音频参考控制声音、场景图维持世界观、品牌素材保商品细节 |
 
 ### 第二步：把提示词拆成三个「剧组部门」
 
@@ -142,24 +149,28 @@ H3 是一个集合导演、摄影、演员、录音和配乐于一体的 AI 剧�
 组合示例："the camera executes a slow, deliberate push-in to reveal the intricate circuitry"。
 每种运镜的叙事目的见第三步的运镜表；一个镜头只选**一种**主要运镜，写成自然动作句。
 
-## 引用输入（i2v / ia2v / r2v / ra2v 关键技巧）
+## 引用输入（ra2v / controlnet 关键技巧）
 
-- i2v：用 **`<Picture 1>`** 指代输入图。官方 i2v 示例开头就写
-  "The transparent gaming mouse from <Picture 1> in its original scene…"，
-  并用 "The scene opens opens exactly on image 1" 把首帧钉死在输入图上。
-- ia2v：**`<Picture 1>`** 是人物肖像（也是视频首帧与构图锚点），**`<Audio 1>`** 是唯一的
-  语音来源——口型、节奏、情绪全部由音频驱动，音频会被 1:1 原样拷贝为成片音轨。
-- r2v：首帧 **`<Picture 1>`**，尾帧 **`<Picture 2>`**。官方示例用
-  "Use <Picture 2> and <Picture 1> as reference frames"，再用 CUT 1 / CUT 2 /
-  TRANSITION 描述从首帧到尾帧的过渡过程（重点写「中间怎么变化」的连续动作路径）。
-- ra2v：同 r2v，另有 **`<Audio 1>`** 可引用（"and <Audio 1> exactly as it is"）。
-  **只有尾帧**时也用 ra2v（只传 `--image-end`）：prompt 反推合理前情，把动作路径
-  一步步引到尾帧，并写明最终构图精确落到 `<Picture 2>`。
+- ra2v 用 **`<Picture 1>`** / **`<Picture 2>`** 指代 `image1` / `image2`，用
+  **`<Audio 1>`** / **`<Audio 2>`** 指代 `audio1` / `audio2`。官方默认 prompt 开头就写
+  "Use <Picture 2> and <Picture 1> as reference frames and <Audio 1> exactly as it is"。
+- 单图动画（旧 i2v 场景）：只传 `--image1`。prompt 里用 `<Picture 1>` 指代输入图
+  （"The transparent gaming mouse from <Picture 1> in its original scene…"），并用
+  "The scene opens exactly on image 1" 把首帧钉死在输入图上。
+- 口播/对口型（旧 ia2v 场景）：**`<Picture 1>`** 是人物肖像（也是视频首帧与构图锚点），
+  **`<Audio 1>`** 是唯一的语音来源——口型、节奏、情绪全部由音频驱动，音频会被 1:1
+  原样拷贝为成片音轨。
+- 首尾帧（旧 r2v 场景）：首帧 **`<Picture 1>`**，尾帧 **`<Picture 2>`**，再用 CUT 1 /
+  CUT 2 / TRANSITION 描述从首帧到尾帧的过渡过程（重点写「中间怎么变化」的连续动作路径）。
+  **只有尾帧**时只传 `--image2`：prompt 反推合理前情，把动作路径一步步引到尾帧，
+  并写明最终构图精确落到 `<Picture 2>`。
+- controlnet：动作由控制视频 `video1` 驱动，官方未定义引用符号；prompt 描述新主体、
+  风格与场景，`image1`/`image2` 负责锁定外观，不要在 prompt 里复述控制视频的动作。
 - 首帧锚定句式（三字段格式常用开头，把 0 秒钉死在输入图上）：
   "For the target video, at 0.00 seconds into the target video, `<Picture 1>`
   (from [Shot 1]) is fully referenced."
 
-## 官方示例 1 — i2v（产品片，默认 prompt）
+## 参考范例 1 — 单图动画产品片（旧 i2v 默认 prompt；ra2v 只传 `--image1` 时照此写）
 
 ```
 Editorial tech product film. The transparent gaming mouse from <Picture 1> in its original
@@ -211,7 +222,7 @@ No text, subtitles, logos or watermarks of any kind, no animation or cartoon ren
 no overly-CG look, keep the live-action texture.
 ```
 
-## 官方示例 3 — r2v / ra2v（美漫风格过场）
+## 官方示例 3 — ra2v（美漫风格过场，默认 prompt）
 
 ```
 Bold comic-book ink style, heavy linework, red and blue-black palette, night city.
@@ -233,13 +244,14 @@ and ink splatter bursting from the impact of the sound. It leans INTO the camera
 roar peaks. Hold on the roar.
 ```
 
-（`<Audio 1>` 只有 ra2v 有对应的音频输入参数；r2v 照抄时去掉。）
+（示例假设传入两张参考图和一段音频；只传部分素材时，引用句相应减少。）
 
-## 官方示例 4 — ia2v（数字人口播，默认 prompt，结构化规格）
+## 参考范例 4 — 数字人口播规格（旧 ia2v 默认 prompt；ra2v `--image1` + `--audio1` 时必须显式写入）
 
-ia2v 的默认 prompt 不是散文而是**结构化规格**：subject_definitions → summary →
+旧 ia2v 的默认 prompt 不是散文而是**结构化规格**：subject_definitions → summary →
 retention_analysis → detailed_description → overall_soundscape → non_diegetic_music。
-需要定制口播场景时照抄这个骨架再改。核心条款（翻译摘要）：
+该工作流已下线，平台不再自动套用这份规格——ra2v 的默认 prompt 是美漫示例，与口播无关，
+所以做数字人口播时**必须自己把这份规格写进 prompt**。核心条款（翻译摘要）：
 
 - **subject_definitions**：`<Subject 1>` 是 `<Picture 1>` 中唯一出现的人（含五官、发型、
   妆容、服装、比例、姿势与构图位置）；`<Picture 1>` 是视频首帧与全片构图锚点（背景、
@@ -254,10 +266,30 @@ retention_analysis → detailed_description → overall_soundscape → non_diege
 - **overall_soundscape**：只保留 `<Audio 1>`，不加任何环境声、配乐、音效。
 - **non_diegetic_music**：N/A，不生成音乐。
 
-英文原文见平台文档 `video_minimax_h3_ia2v` 的默认 prompt（约 4000 字符），需要逐字版
-可直接不带 prompt 提交——不发送 prompt 时平台自动套用该规格。
+英文原文（约 4000 字符）出自已下线的 ia2v 默认 prompt；ra2v 没有口播默认 prompt，
+请按下述骨架显式撰写，再按场景改写。
 
-## 实战范例 — 雨夜客栈女主登场（首帧 i2v，三字段完整版）
+## 官方示例 5 — controlnet（动作控制 · 沙之舞，默认 prompt）
+
+```
+Scene: Hyperreal desert-storm aesthetic. A humanoid figure made of packed sand dances in a
+barren wasteland, each move shedding dust, the wind eroding and reshaping its body.
+[0s-2s] Pale desert, a sand humanoid begins to move from stillness, surface grains trickling
+off and dragging mist-like trails in the wind.
+[2s-4s] Spins and arm swings keep dissolving and rebuilding its edges, raised sand columns
+glowing gold in hard light under a searing white sky.
+[4s-5s] On the final pose, half the body has already been carried away by wind as a hanging
+line of sand, not yet fallen.
+Camera: medium fixed shot, focus pull from sand-grain close-up to full body.
+Audio: fine sand-scrape texture throughout, one distant desert wind call at 2s, no music.
+Negative: no dissolve transitions / no text overlays / no human face / no camera shake
+```
+
+注意分工：动作序列（起手→旋转→定势）与节拍由控制视频 `video1` 提供，prompt 描述的是
+**主体**（沙塑人形）、**风格**（超写实沙漠风暴）、**材质变化路径**（每次动作扬沙、风蚀
+重塑）与**声音分层**。传 `--image1` 时另加一致性约束锁定角色外观。
+
+## 实战范例 — 雨夜客栈女主登场（单图动画，ra2v 只传 `--image1`，三字段完整版）
 
 素材：首帧图是一名红衣古装女子站在雨夜客栈门外，手持黑伞，腰间佩剑。视频 8 秒，
 她抬头看向二楼，然后说「终于找到你了」。
@@ -310,8 +342,8 @@ The music decreases in volume during the dialogue and gently rises after her fin
   该镜头自己的 `duration`，绝不写整部片子的总时间轴。
 - **风格句与负面约束逐镜复用**：每个 prompt 用同一句 style & look 开头、同一组
   负面约束收尾（人物、场景、色调的描述也原样复用），合并后才像一个整体。
-- **连贯转场**：把上一镜的尾帧（API 结果里的 `cover_url`）作为下一镜的 `--image`
-  （i2v）或 `--image-start`（r2v/ra2v），prompt 写 "The scene opens exactly on
+- **连贯转场**：把上一镜的尾帧（API 结果里的 `cover_url`）作为下一镜的 `--image1`
+  （ra2v），prompt 写 "The scene opens exactly on
   <Picture 1>, continuing directly from the previous shot"；这种链式镜头必须按顺序生成。
 - **硬切**：各镜独立生成即可，prompt 里照常写 "Cut to …"；各镜可并行提交。
 - **音频**：每镜自带的生成音频会在合并时拼成整条音轨；若整片要配一条独立音乐，
@@ -320,18 +352,21 @@ The music decreases in volume during the dialogue and gently rises after her fin
 ## 常见需求的写法速查
 
 - **产品展示**：棚拍虚空 + 双色轮廓光 + push-in / macro / levitate 三镜头 + 机械音效。
-- **人物动起来**（i2v 人像）：写明 "the person from <Picture 1>"，动作要小而具体
-  （转头、微笑、发丝飘动），幅度越大越容易崩。
-- **数字人口播**（ia2v）：人像 + 语音音频；prompt 默认即可；`duration` ≥ 音频时长；
-  aspect 用 3:4 / 9:16 等竖向比例。
+- **人物动起来**（ra2v 单图人像，只传 `--image1`）：写明 "the person from <Picture 1>"，
+  动作要小而具体（转头、微笑、发丝飘动），幅度越大越容易崩。
+- **数字人口播**（ra2v `--image1` + `--audio1`）：必须显式写口播 prompt（照抄「参考范例 4」
+  的骨架）；`duration` ≥ 音频时长；aspect 用 3:4 / 9:16 等竖向比例。
+- **动作迁移/舞蹈复刻**（controlnet）：`--video1` 给动作，`--image1` 锁角色外观，
+  prompt 描述新主体/风格/场景与材质变化路径，不复述控制视频的动作。
 - **电影感**：anamorphic lens、shallow depth of field、film grain、volumetric fog、
   restrained grading + 分镜表 + 配乐描述。
 - **动漫/插画**：先定风格（comic-book ink / anime cel shading / watercolor），负面约束里
   就不要再排除 cartoon rendering。
-- **首尾帧过渡**（r2v）：先分别描述首帧画面和尾帧画面（各自锚定 <Picture 1>/<Picture 2>），
-  再用 TRANSITION 写明过渡方式（whip pan / morph / match cut / 运镜穿越）。
-- **画面跟声音走**（ra2v）：把 <Audio 1> 的节奏写进分镜（"an accent hit on each leap，
-  the score bursting at 4s"），让剪辑点落在音频重音上。
+- **首尾帧过渡**（ra2v `--image1` + `--image2`）：先分别描述首帧画面和尾帧画面（各自锚定
+  <Picture 1>/<Picture 2>），再用 TRANSITION 写明过渡方式（whip pan / morph / match cut /
+  运镜穿越）。
+- **画面跟声音走**（ra2v）：把 <Audio 1>（或 <Audio 2>）的节奏写进分镜（"an accent hit
+  on each leap, the score bursting at 4s"），让剪辑点落在音频重音上。
 - **有对白的剧情**（AI 漫剧）：S1/S2 稳定编号 + 首现交代声音特征；对白用
   `<d>[语言] 原文</d>` 且只写在主体描述字段；配乐写避让（对白时降、对白后升）；
   参考图先声明一致性约束再拆动作（见第四步）。
@@ -344,8 +379,9 @@ The music decreases in volume during the dialogue and gently rises after her fin
 
 不想每次从头设计时，按此模板直接产出完整 prompt（即本指南五步导演法的固化形式）：
 
-> 你是一名 MiniMax H3 视频提示词导演。请根据我的需求，先判断应使用：1. 文生视频；
-> 2. 首帧图生视频；3. 首尾帧生视频；4. 尾帧生视频；5. 多模态参考生成。然后输出完整的
+> 你是一名 MiniMax H3 视频提示词导演。请根据我的需求，先判断应使用：1. 文生视频（t2v）；
+> 2. 参考图生视频（ra2v，1–2 张参考图）；3. 尾帧反推（ra2v 只传尾帧）；4. 数字人口播
+> （ra2v 人物图+语音）；5. 动作控制（controlnet 控制视频+角色图）。然后输出完整的
 > 英文视频提示词，必须包含：
 >
 > `integrated_multimodal_description`：沿时间线描述画面风格、景别、人物身份、外观

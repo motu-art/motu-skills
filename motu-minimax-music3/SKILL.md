@@ -89,8 +89,8 @@ of thumb one line eats roughly 3–5 seconds, so ~40 lines for a 180s pop song.
   often come back shorter than `max_duration` — the model ends when the arrangement ends).
 - To iterate: rerun with the same `--seed` and an edited caption to hear exactly what the
   edit changed, or a new seed for a different take of the same brief.
-- Generated audio works directly as the `audio` input of the motu-video-minimax-h3 skill
-  (ra2v/ia2v) when scoring a video.
+- Generated audio works directly as the `audio1` input of the motu-minimax-h3 skill
+  (ra2v/controlnet) when scoring a video.
 
 ## Troubleshooting
 

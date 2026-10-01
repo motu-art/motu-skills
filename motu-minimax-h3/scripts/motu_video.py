@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
 """Submit, poll, and download videos from the motu.art MiniMax H3 workflow API.
 
-Five workflows (short aliases accepted):
-  t2v   video_minimax_h3_t2v    text-to-video            --prompt (required)
-  i2v   video_minimax_h3_i2v    image-to-video           --image (required)
-  ia2v  video_minimax_h3_ia2v   image+audio-to-video     --image + --audio (lip-sync)
-  r2v   video_minimax_h3_r2v    start/end frame          --image-start + --image-end (required)
-  ra2v  video_minimax_h3_ra2v   frames+audio-to-video    any of --image-start/--image-end/--audio
+Three workflows (short aliases accepted):
+  t2v         video_minimax_h3_t2v                   text-to-video   --prompt (required)
+  ra2v        video_minimax_h3_ra2v                  ref images+audio  any of --image1/--image2/--audio1/--audio2
+  controlnet  video_minimax_h3_fun_controlnet_union  motion control  --video1 (control video) + optional refs
 
 Usage:
-  motu_video.py generate --workflow t2v --prompt "..." [--aspect-ratio 16:9] [--duration 5]
-  motu_video.py generate --workflow i2v --image ./frame.png --prompt "..."
-  motu_video.py generate --workflow ia2v --image ./portrait.png --audio ./speech.mp3
-  motu_video.py generate --workflow r2v --image-start a.png --image-end b.png
-  motu_video.py generate --workflow ra2v --image-start a.png --image-end b.png --audio sfx.mp3
+  motu_video.py generate --workflow t2v --prompt "..." [--aspect-ratio 16:9] [--duration 5] [--steps 8]
+  motu_video.py generate --workflow ra2v --image1 ./frame.png --prompt "..."
+  motu_video.py generate --workflow ra2v --image1 a.png --image2 b.png --audio1 voice.mp3
+  motu_video.py generate --workflow controlnet --video1 ./dance.mp4 --image1 ./hero.png --prompt "..."
   motu_video.py merge --out final.mp4 shot_01.mp4 shot_02.mp4 shot_03.mp4
   motu_video.py status --request-id <uuid>
   motu_video.py upload --file ./image.png
 
-Local image/audio files are uploaded automatically (base64 data URIs fail silently
-in processing, so the script always routes locals through the OSS presign route).
-Requires MOTU_KEY in the environment. Pass --dry-run to print the request
-without sending it (no API quota consumed).
+ra2v absorbs the old i2v / ia2v / r2v use cases: one image (animate a picture),
+one image + one audio (talking head), two images (start/end frames) — plus a
+second audio input (--audio2). controlnet transplants the motion of a control
+video onto a new subject (images lock appearance, audio1 supplies the track).
+
+Local image/audio/video files are uploaded automatically (base64 data URIs fail
+silently in processing, so the script always routes locals through the OSS
+presign route). Requires MOTU_KEY in the environment. Pass --dry-run to print
+the request without sending it (no API quota consumed).
 
 merge concatenates shot clips (the long-form strategy: each generation caps at
 15 s, so split by shot, generate per shot, then merge) into one video. It needs
@@ -46,12 +48,41 @@ API_BASE = os.environ.get("MOTU_API_BASE", "https://api.motu.art")
 
 WORKFLOW_ALIASES = {
     "t2v": "video_minimax_h3_t2v",
-    "i2v": "video_minimax_h3_i2v",
-    "ia2v": "video_minimax_h3_ia2v",
-    "r2v": "video_minimax_h3_r2v",
     "ra2v": "video_minimax_h3_ra2v",
+    "controlnet": "video_minimax_h3_fun_controlnet_union",
 }
 WORKFLOWS = tuple(WORKFLOW_ALIASES.values())
+
+# Per-workflow input/parameter matrix (from the API sheets, 2026-10).
+MEDIA_FIELDS = {
+    "video_minimax_h3_t2v": (),
+    "video_minimax_h3_ra2v": ("image1", "image2", "audio1", "audio2"),
+    "video_minimax_h3_fun_controlnet_union": ("video1", "audio1", "image1", "image2"),
+}
+# Which workflow accepts each media flag — for error messages when flags and
+# workflow don't match (a wrong pair would otherwise be dropped silently).
+FLAG_WORKFLOWS = {
+    "image1": "ra2v / controlnet",
+    "image2": "ra2v / controlnet",
+    "audio1": "ra2v / controlnet",
+    "audio2": "ra2v only",
+    "video1": "controlnet only",
+}
+RULES = {
+    "video_minimax_h3_t2v": {
+        "prompt_required": True, "prompt_max": 6000, "megapixels_min": 0.2,
+        "steps": True, "filename_prefix": True,
+    },
+    "video_minimax_h3_ra2v": {
+        "prompt_required": False, "prompt_max": 8000, "megapixels_min": 0.2,
+        "steps": True, "filename_prefix": False,
+    },
+    # controlnet's megapixels floor is 0.3 (the others accept 0.2).
+    "video_minimax_h3_fun_controlnet_union": {
+        "prompt_required": False, "prompt_max": 6000, "megapixels_min": 0.3,
+        "steps": False, "filename_prefix": False,
+    },
+}
 
 # The API validates aspect_ratio against these full labels, not bare "16:9".
 ASPECT_RATIOS = {
@@ -64,20 +95,15 @@ ASPECT_RATIOS = {
     "16:9": "16:9 (Widescreen)",
 }
 
-DEFAULT_ASPECT = {
-    "video_minimax_h3_t2v": "16:9 (Widescreen)",
-    "video_minimax_h3_i2v": "1:1 (Square)",
-    "video_minimax_h3_ia2v": "3:4 (Portrait Standard)",
-    "video_minimax_h3_r2v": "16:9 (Widescreen)",
-    "video_minimax_h3_ra2v": "16:9 (Widescreen)",
-}
+DEFAULT_ASPECT = "16:9 (Widescreen)"  # all three workflows
 
-# Frames or audio referenced by the prompt as <Picture 1>/<Picture 2>/<Audio 1>.
+# Media inputs the prompt can reference; printed as a tip when --prompt is omitted.
 PROMPT_REF_NOTES = {
-    "video_minimax_h3_i2v": "reference the image as <Picture 1>",
-    "video_minimax_h3_ia2v": "reference the image as <Picture 1> and the audio as <Audio 1>",
-    "video_minimax_h3_r2v": "reference the start frame as <Picture 1>, the end frame as <Picture 2>",
-    "video_minimax_h3_ra2v": "reference the frames as <Picture 1>/<Picture 2> and the audio as <Audio 1>",
+    "video_minimax_h3_ra2v":
+        "reference the images as <Picture 1>/<Picture 2> and the audio as <Audio 1>/<Audio 2>",
+    "video_minimax_h3_fun_controlnet_union":
+        "the control video's motion is transplanted onto your subject; lock appearance "
+        "with image1/image2 and describe the subject and scene in the prompt",
 }
 
 
@@ -91,7 +117,7 @@ def api_key():
 def http(method, url, body=None, headers=None, timeout=120):
     req = urllib.request.Request(url, method=method)
     # Kong rejects urllib's default UA; send a neutral one.
-    req.add_header("User-Agent", "motu-video-minimax-h3/1.0")
+    req.add_header("User-Agent", "motu-minimax-h3/1.0")
     for k, v in (headers or {}).items():
         req.add_header(k, v)
     data = None
@@ -155,56 +181,52 @@ def normalize_aspect(value):
 def build_payload(args):
     wf = WORKFLOW_ALIASES.get(args.workflow, args.workflow)
     args.workflow = wf
+    rule = RULES[wf]
+    media = MEDIA_FIELDS[wf]
+
+    # Fail loudly on flags the chosen workflow doesn't accept.
+    for flag, where in FLAG_WORKFLOWS.items():
+        if getattr(args, flag) and flag not in media:
+            sys.exit(f"--{flag} is not accepted by {wf} ({where}) — wrong workflow?")
+    if args.steps is not None and not rule["steps"]:
+        sys.exit(f"--steps is not accepted by {wf} (t2v/ra2v only)")
+    if args.filename_prefix and not rule["filename_prefix"]:
+        sys.exit(f"--filename-prefix is not accepted by {wf} (t2v only)")
+
     p = {}
-    if wf == "video_minimax_h3_t2v":
-        if not args.prompt:
-            sys.exit("t2v requires --prompt")
-    elif wf == "video_minimax_h3_i2v":
-        image = resolve_media(args.image or args.image_url, "image")
-        if not image:
-            sys.exit("i2v requires --image (local file) or --image-url")
-        p["image_url"] = image
-    elif wf == "video_minimax_h3_ia2v":
-        # Both inputs are technically optional, but the workflow exists to animate
-        # a picture driven by an audio track — warn rather than fail.
-        image = resolve_media(args.image or args.image_url, "image")
-        audio = resolve_media(args.audio, "audio")
-        if not image and not audio:
-            print("warning: ia2v with no image and no audio just renders the default "
-                  "prompt from scratch — pass --image and --audio.", file=sys.stderr)
-        if image:
-            p["image_url"] = image
-        if audio:
-            p["audio"] = audio
-    elif wf == "video_minimax_h3_r2v":
-        start = resolve_media(args.image_start, "start frame")
-        end = resolve_media(args.image_end, "end frame")
-        if not start or not end:
-            sys.exit("r2v requires --image-start and --image-end (local paths or URLs)")
-        p["image_start_url"] = start
-        p["image_end_url"] = end
-    else:  # ra2v: every media input optional
-        for flag, field, what in ((args.image_start, "image_start_url", "start frame"),
-                                  (args.image_end, "image_end_url", "end frame"),
-                                  (args.audio, "audio", "audio")):
-            url = resolve_media(flag, what)
-            if url:
-                p[field] = url
+    for field in media:
+        value = getattr(args, field)
+        if value:
+            p[field] = resolve_media(value, field)
+
     if args.prompt:
+        if len(args.prompt) > rule["prompt_max"]:
+            sys.exit(f"prompt is {len(args.prompt)} chars; max {rule['prompt_max']} for {wf}")
         p["prompt"] = args.prompt
-    elif wf in PROMPT_REF_NOTES and (len(p) > 0):
-        print(f"tip: no --prompt given; in the prompt you write, {PROMPT_REF_NOTES[wf]}.",
-              file=sys.stderr)
-    aspect = normalize_aspect(args.aspect_ratio) or DEFAULT_ASPECT[wf]
-    p["aspect_ratio"] = aspect
+    elif rule["prompt_required"]:
+        sys.exit(f"{wf} requires --prompt")
+    elif wf in PROMPT_REF_NOTES and p:
+        print(f"tip: no --prompt given; {PROMPT_REF_NOTES[wf]}.", file=sys.stderr)
+
     if args.duration is not None:
+        if not 3 <= args.duration <= 15:
+            sys.exit(f"duration must be 3-15 s, got {args.duration}")
         p["duration"] = args.duration
     if args.megapixels is not None:
+        if not rule["megapixels_min"] <= args.megapixels <= 1:
+            sys.exit(f"megapixels must be {rule['megapixels_min']}-1 for {wf}, got {args.megapixels}")
         p["megapixels"] = args.megapixels
+    if args.steps is not None:
+        if not 4 <= args.steps <= 8:
+            sys.exit(f"steps must be 4-8, got {args.steps}")
+        p["steps"] = args.steps
     if args.seed is not None:
+        if not 0 <= args.seed <= 10**16:
+            sys.exit(f"seed must be 0-10000000000000000, got {args.seed}")
         p["seed"] = args.seed
-    if args.filename_prefix and wf == "video_minimax_h3_t2v":
+    if args.filename_prefix:
         p["filename_prefix"] = args.filename_prefix
+    p["aspect_ratio"] = normalize_aspect(args.aspect_ratio) or DEFAULT_ASPECT
     if args.callback_url:
         p["callback_url"] = args.callback_url
     if args.priority:
@@ -223,12 +245,26 @@ def submit(workflow, payload, dry_run=False):
     return json.loads(raw)
 
 
+# The docs specify GET /workflows/status/{id}; the pre-2026-10 live API answered
+# GET /workflow/status?workflow_request_id=. Try the documented route first and
+# remember whichever returns 200.
+_status_url = {"url": None}
+
+
 def poll_once(request_id):
-    url = f"{API_BASE}/workflow/status?workflow_request_id={urllib.parse.quote(request_id)}"
-    status, raw = http("GET", url, headers=authed_headers())
-    if status != 200:
-        sys.exit(f"status failed [{status}]: {raw.decode(errors='replace')}")
-    return json.loads(raw)
+    quoted = urllib.parse.quote(request_id)
+    candidates = [f"{API_BASE}/workflows/status/{quoted}",
+                  f"{API_BASE}/workflow/status?workflow_request_id={quoted}"]
+    if _status_url["url"]:
+        candidates.insert(0, _status_url["url"])
+    err = "no route attempted"
+    for url in dict.fromkeys(candidates):
+        status, raw = http("GET", url, headers=authed_headers())
+        if status == 200:
+            _status_url["url"] = url
+            return json.loads(raw)
+        err = f"[{status}] {raw.decode(errors='replace')}"
+    sys.exit(f"status failed for {request_id}: {err}")
 
 
 def poll(request_id, interval=10, timeout=1800):
@@ -249,7 +285,7 @@ def poll(request_id, interval=10, timeout=1800):
 def download(url, out_path):
     print(f"Downloading -> {out_path}", file=sys.stderr)
     req = urllib.request.Request(url)
-    req.add_header("User-Agent", "motu-video-minimax-h3/1.0")
+    req.add_header("User-Agent", "motu-minimax-h3/1.0")
     with urllib.request.urlopen(req, timeout=600) as resp, open(out_path, "wb") as f:
         while True:
             chunk = resp.read(1 << 20)
@@ -417,16 +453,18 @@ def main():
     g = sub.add_parser("generate", help="submit a generation and wait for the video")
     g.add_argument("--workflow", required=True,
                    choices=list(WORKFLOW_ALIASES) + list(WORKFLOWS),
-                   help="t2v | i2v | ia2v | r2v | ra2v (or the full workflow name)")
+                   help="t2v | ra2v | controlnet (or the full workflow name)")
     g.add_argument("--prompt")
-    g.add_argument("--image", help="i2v/ia2v: local image file (uploaded automatically)")
-    g.add_argument("--image-url", help="i2v/ia2v: image URL")
-    g.add_argument("--image-start", help="r2v/ra2v: start frame (local path or URL)")
-    g.add_argument("--image-end", help="r2v/ra2v: end frame (local path or URL)")
-    g.add_argument("--audio", help="ia2v/ra2v: audio track (local path or URL)")
+    g.add_argument("--image1", help="ra2v/controlnet: reference image (local path or URL); <Picture 1>")
+    g.add_argument("--image2", help="ra2v/controlnet: second reference image; <Picture 2>")
+    g.add_argument("--audio1", help="ra2v/controlnet: audio track (local path or URL); <Audio 1>")
+    g.add_argument("--audio2", help="ra2v only: second audio track; <Audio 2>")
+    g.add_argument("--video1", help="controlnet only: control video whose motion drives the output")
     g.add_argument("--aspect-ratio", help="e.g. 16:9 or '16:9 (Widescreen)'")
-    g.add_argument("--duration", type=float, help="seconds, 3-15 (t2v/i2v/r2v/ra2v default 5, ia2v default 6)")
-    g.add_argument("--megapixels", type=float, help="0.2-1 (default 0.4, ra2v 0.7)")
+    g.add_argument("--duration", type=float, help="seconds, 3-15 (default 5)")
+    g.add_argument("--megapixels", type=float,
+                   help="0.2-1 (default 0.4 t2v/controlnet, 0.7 ra2v; controlnet min 0.3)")
+    g.add_argument("--steps", type=int, help="sampling steps 4-8 (t2v/ra2v only, default 8)")
     g.add_argument("--seed", type=int)
     g.add_argument("--filename-prefix", help="t2v only")
     g.add_argument("--callback-url")

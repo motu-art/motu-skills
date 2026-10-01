@@ -130,8 +130,8 @@ than writing from zero.
 - If a result misses the intent, fix the prompt (tighter facts, stronger anchors,
   explicit exclusions) and rerun with the same `--seed` to isolate the change; new seed
   for variety. Regenerate only the missed image — the others are unaffected.
-- Generated images work directly as inputs to sibling skills: `motu-video-minimax-h3`
-  (i2v / r2v frames) and `motu-remove-watermark`.
+- Generated images work directly as inputs to sibling skills: `motu-minimax-h3`
+  (ra2v reference images) and `motu-remove-watermark`.
 - Text-bearing deliverables (exact-wording logos, typography posters): Z-Image can
   render short quoted text, but `motu-ideogram4` is the stronger choice — switch skills.
 

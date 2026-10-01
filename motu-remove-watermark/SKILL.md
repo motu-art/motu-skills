@@ -57,8 +57,8 @@ print or large displays. The output aspect ratio always matches the input image.
   compounds artifacts).
 - Semi-transparent full-image diagonal watermarks (the repeated-tile kind) are the hardest
   case — expect some softening in those regions.
-- The cleaned image works directly as input to the sibling skills (`motu-ideogram4` needs
-  no input image, but `motu-video-minimax-h3` i2v/r2v accept these outputs as frames).
+- The cleaned image works directly as a reference-image input (`image1`/`image2`) to the
+  sibling `motu-minimax-h3` skill (ra2v).
 
 ## Troubleshooting
 

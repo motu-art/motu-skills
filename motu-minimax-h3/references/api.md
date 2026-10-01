@@ -1,8 +1,15 @@
-# motu.art Workflow API — reference (verified against live API 2026-08-21)
+# motu.art Workflow API — reference (workflow set per minimax_h3_api.md, 2026-10;
+# all three workflow names and the status routes re-verified against the live API 2026-10-01)
 
 Base URL: `https://api.motu.art`
 Auth: `Authorization: Bearer $MOTU_KEY` on every request.
 (Kong gateway rejects Python's default urllib User-Agent — the bundled script sends a custom UA.)
+
+The MiniMax H3 family exposes **three workflows**: `video_minimax_h3_t2v`,
+`video_minimax_h3_ra2v`, and `video_minimax_h3_fun_controlnet_union`. The old
+i2v / ia2v / r2v workflows are gone — their use cases (animate one image,
+talking head, start/end frames) are all covered by `ra2v`'s reference inputs
+(`image1`/`image2`/`audio1`/`audio2`).
 
 ## Submit a workflow
 
@@ -37,12 +44,15 @@ Errors:
 ## Poll for status / result
 
 ```
-GET /workflow/status?workflow_request_id={id}
+GET /workflows/status/{workflow_request_id}
 Authorization: Bearer $MOTU_KEY
 ```
 
-(The docs also document `GET /workflows/status/{id}`; the query-param form above is the one
-verified working against the live API and is what the script uses.)
+(As of 2026-10-01 this documented path form is NOT deployed yet — it returns the
+Kong catch-all `500 {"message": "Failed to retrieve API cost"}`. The live route is
+still the legacy `GET /workflow/status?workflow_request_id={id}`. The bundled script
+tries the documented form first and falls back to the legacy form, remembering
+whichever returns 200.)
 
 While running:
 ```json
@@ -68,15 +78,15 @@ On completion the same endpoint includes `result`:
 
 `url` is the mp4 (note: no `.mp4` extension in the path — save it with one locally).
 `cover_url` is the video's last frame as jpg, handy as a poster frame or as the input
-image for a follow-up i2v run.
+image for a follow-up ra2v run.
 Signed OSS URLs expire after **14 days** — download promptly.
 
-## Upload a local file (images for i2v/r2v/ia2v/ra2v, audio for ia2v/ra2v)
+## Upload a local file (images, audio, and control videos)
 
-`image_url` / `image_start_url` / `image_end_url` / `audio` must be publicly reachable
-`http(s)://` URLs. Base64 data URIs are NOT accepted: they pass submit-time validation
-(202) but the job fails silently during processing (verified 2026-08-21, i2v + r2v).
-Upload local files through the OSS presign route:
+`image1` / `image2` / `audio1` / `audio2` / `video1` must be publicly reachable
+`http(s)://` URLs. Base64 data URIs pass submit-time validation (202) but the job
+fails silently during processing — always upload locals through the OSS presign
+route:
 
 ```
 POST /oss/presigned-url
@@ -92,7 +102,8 @@ Content-Type: application/json
 
 Then `PUT` the raw file bytes to `uploadUrl` with the **exact same `Content-Type`** you sent
 as `fileType` (the signature covers it), and use the returned `url` as the workflow input.
-`scripts/motu_video.py upload --file x.png` and the `--image*`/`--audio` flags do this automatically.
+`scripts/motu_video.py upload --file x.png` and the `--image1`/`--image2`/`--audio1`/`--audio2`/`--video1`
+flags do this automatically (control videos included).
 
 ## Workflow parameter sheets
 
@@ -101,61 +112,49 @@ as `fileType` (the signature covers it), and use the returned `url` as the workf
 | Param | Required | Default | Notes |
 |---|---|---|---|
 | `prompt` | yes | — | max 6000 chars |
+| `steps` | no | 8 | sampling steps, 4–8 |
+| `filename_prefix` | no | `video` | |
 | `aspect_ratio` | no | `16:9 (Widescreen)` | full labels only |
 | `megapixels` | no | 0.4 | 0.2–1 |
 | `duration` | no | 5 | 3–15 s |
-| `filename_prefix` | no | `video` | |
 | `seed` | no | 0 | 0–10000000000000000 |
 
-### video_minimax_h3_i2v — image-to-video
+### video_minimax_h3_ra2v — reference images + audio to video
+
+The multimodal workhorse: any combination of up to two reference images and up
+to two audio tracks. One image = animate a picture (old i2v); image + audio =
+talking head / lip sync (old ia2v); two images = start/end frame transition
+(old r2v); two images + audio = the original ra2v.
 
 | Param | Required | Default | Notes |
 |---|---|---|---|
-| `image_url` | yes | — | public URL; upload locals via /oss/presigned-url |
-| `prompt` | no | — | max 6000 chars; reference the image as `<Picture 1>` |
-| `aspect_ratio` | no | `1:1 (Square)` | match the input image's shape |
-| `megapixels` | no | 0.4 | max 1 |
-| `duration` | no | 5 | 3–15 s |
-| `seed` | no | 0 | |
-
-### video_minimax_h3_ia2v — image+audio-to-video (talking head)
-
-| Param | Required | Default | Notes |
-|---|---|---|---|
-| `image_url` | no | — | portrait to animate; `<Picture 1>` |
-| `audio` | no | — | voice track; `<Audio 1>`; copied 1:1 into the final video |
-| `prompt` | no | built-in talking-head spec | max 6000 chars; see references/prompting.md |
-| `aspect_ratio` | no | `3:4 (Portrait Standard)` | full labels only |
-| `megapixels` | no | 0.4 | max 1 |
-| `duration` | no | 6 | max 15 s |
-| `seed` | no | 0 | |
-
-Semantics (from the official default prompt): the output is one uninterrupted fixed-camera
-shot that starts exactly on `<Picture 1>`; the visible speaking performance is driven
-exclusively by `<Audio 1>`, which is copied unaltered as the sole audio track.
-
-### video_minimax_h3_r2v — start/end frame
-
-| Param | Required | Default | Notes |
-|---|---|---|---|
-| `image_start_url` | yes | — | referenced as `<Picture 1>` in prompt |
-| `image_end_url` | yes | — | referenced as `<Picture 2>` in prompt |
-| `prompt` | no | — | max 6000 chars |
-| `aspect_ratio` | no | `16:9 (Widescreen)` | |
-| `megapixels` | no | 0.4 | max 1 |
-| `duration` | no | 5 | 3–15 s |
-| `seed` | no | 0 | |
-
-### video_minimax_h3_ra2v — frames+audio-to-video
-
-| Param | Required | Default | Notes |
-|---|---|---|---|
-| `image_start_url` | no | — | referenced as `<Picture 1>` |
-| `image_end_url` | no | — | referenced as `<Picture 2>` |
-| `audio` | no | — | referenced as `<Audio 1>` |
+| `image1` | no | — | referenced as `<Picture 1>` in prompt |
+| `image2` | no | — | referenced as `<Picture 2>` in prompt |
+| `audio1` | no | — | referenced as `<Audio 1>` in prompt |
+| `audio2` | no | — | referenced as `<Audio 2>` in prompt |
 | `prompt` | no | — | **max 8000 chars** |
-| `aspect_ratio` | no | `16:9 (Widescreen)` | |
+| `steps` | no | 8 | sampling steps, 4–8 |
+| `aspect_ratio` | no | `16:9 (Widescreen)` | match the input images' shape |
 | `megapixels` | no | **0.7** | 0.2–1 |
+| `duration` | no | 5 | 3–15 s |
+| `seed` | no | 0 | |
+
+### video_minimax_h3_fun_controlnet_union — motion control
+
+Transplants the motion of a control video onto a new subject: `video1` drives
+the motion/camera trajectory, `image1`/`image2` lock the subject's and scene's
+appearance, `audio1` supplies the audio track. Use it when the brief is "make
+my character do exactly this movement" — text alone can't pin down choreography.
+
+| Param | Required | Default | Notes |
+|---|---|---|---|
+| `video1` | no | — | control video (motion source); upload locals via /oss/presigned-url |
+| `image1` | no | — | appearance reference |
+| `image2` | no | — | second appearance reference |
+| `audio1` | no | — | audio track |
+| `prompt` | no | — | max 6000 chars; describe the subject/scene — motion comes from `video1` |
+| `aspect_ratio` | no | `16:9 (Widescreen)` | |
+| `megapixels` | no | 0.4 | **0.3**–1 (floor is higher than the other workflows) |
 | `duration` | no | 5 | 3–15 s |
 | `seed` | no | 0 | |
 
